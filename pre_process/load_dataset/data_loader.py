@@ -1,0 +1,60 @@
+import numpy as np
+from typing import List
+from pre_process.mol_graph import Graph, Graph2D
+from torch.utils import data
+from torch.autograd import Variable
+
+from utils import *
+
+
+def embed_arr(arr, dims):
+    new_arr = np.zeros(dims)
+    mask = np.zeros(dims).astype(bool)
+    mask[np.ix_(*[range(dim) for dim in arr.shape])] = True
+    np.putmask(new_arr, mask, arr)
+    return new_arr
+
+
+def create_mask(arr_dims, dims):
+    mask = np.zeros(dims)
+    mask[np.ix_(*[range(dim) for dim in arr_dims])] = 1
+    return mask
+
+
+def collate_2d_graphs(graphs):
+    # type: (List[Graph2D]) -> object
+    max_size = np.argmax([graph.afm.shape[0] for graph in graphs])
+    max_dims = graphs[max_size].afm.shape
+    afms = np.array([embed_arr(graph.afm, max_dims) for graph in graphs])
+    bfms = np.array([embed_arr(graph.bfm, graphs[max_size].bfm.shape) for graph in graphs])
+    adjs = np.array([embed_arr(graph.adj, graphs[max_size].adj.shape) for graph in graphs])
+    t_dists = np.array([embed_arr(graph.t_dist, graphs[max_size].t_dist.shape) for graph in graphs])
+    afm_masks = np.array([create_mask(graph.afm.shape[:-1]+(1,), max_dims[:-1] + (1,)) for graph in graphs])
+    labels = np.array([graph.label for graph in graphs])
+
+    return {
+        'afm': Variable(from_numpy(afms).float()),
+        'bfm': Variable(from_numpy(bfms).float()),
+        'adj': Variable(from_numpy(adjs).float()),
+        't_dist': Variable(from_numpy(t_dists).float()),
+        'mask': Variable(from_numpy(afm_masks).float()),
+        'labels': Variable(from_numpy(labels))
+        }
+
+
+class GraphDataSet(data.Dataset):
+
+    def __init__(self, dataset):
+        # type: (List[Graph]) -> object
+        super(GraphDataSet, self).__init__()
+        self.data = dataset
+        self.len = len(dataset)
+
+    def __len__(self):
+        return self.len
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+
+__all__ = ['collate_2d_graphs', 'GraphDataSet']
