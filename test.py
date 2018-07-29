@@ -37,7 +37,7 @@ mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
-    no_labels = file_data['no_labels']
+    no_labels = int(file_data['no_labels'])
     file_data.close()
 except IOError:
     data, no_labels = load_classification_dataset(data_file+'.csv',
