@@ -31,18 +31,18 @@ def save_model(model, model_att):
 
 seed = 317
 torch.manual_seed(seed)
-file = sys.argv[1]
+data_file = sys.argv[1]
 
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 try:
-    file_data = np.load(file+'.npz')
+    file_data = np.load(data_file+'.npz')
     data = file_data['data']
     no_labels = file_data['no_labels']
     file_data.close()
 except IOError:
-    data, no_labels = load_classification_dataset(file+'.csv',
+    data, no_labels = load_classification_dataset(data_file+'.csv',
                                               'InChI', Chem.MolFromInchi, mgf, 'target')
-    np.savez_compressed(file, data=data, no_labels=no_labels)
+    np.savez_compressed(data_file, data=data, no_labels=no_labels)
 
 model_attributes = {
     'node_features': data[0].afm.shape[-1],
