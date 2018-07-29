@@ -24,7 +24,7 @@ def count_model_params(model):
 def save_model(model, model_att):
     # type: (nn.Module, dict) -> None
     torch.save(model.state_dict(), 'basic_model.state_dict')
-    with open('basic_model_attributes.pickle', 'w') as out:
+    with open('basic_model_attributes.pickle', 'wb') as out:
         pickle.dump(model_att, out)
 
 
@@ -32,58 +32,75 @@ seed = 317
 torch.manual_seed(seed)
 
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
-data, no_labels = load_classification_dataset('/Users/sh/Code/EAGCN/data/small_batch_test_long.csv',
+try:
+    file_data = np.load('/Users/sh/Code/EAGCN/data/small_batch_test_long.npz')
+    data = file_data['data']
+    no_labels = file_data['no_labels']
+    file_data.close()
+except IOError:
+    data, no_labels = load_classification_dataset('/Users/sh/Code/EAGCN/data/small_batch_test_long.csv',
                                               'InChI', Chem.MolFromInchi, mgf, 'target')
+    np.savez_compressed('/Users/sh/Code/EAGCN/data/small_batch_test_long.npz', data=data, no_labels=no_labels)
+
 model_attributes = {
     'node_features': data[0].afm.shape[-1],
     'edge_features': data[0].bfm.shape[-1],
     'message_features': 2*data[0].afm.shape[-1],
     'adjacency_dim': data[0].adj.shape[-1],
-    'output_dim': 2*(no_labels+1),
-    'classification_output': no_labels+1
+    'output_dim': 2*no_labels,
+    'classification_output': no_labels
 }
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(data[0].afm.shape[-1], data[0].bfm.shape[-1], 2*data[0].afm.shape[-1],
-                            data[0].adj.shape[-1], 2*(no_labels+1))),
-    nn.Linear(2*(no_labels+1), no_labels+1)
+                            data[0].adj.shape[-1], 2*no_labels)),
+    nn.Linear(2*no_labels, no_labels)
 )
 
+print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
     model.cuda()
 
-print "Model has: {} parameters".format(count_model_params(model))
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 model.train()
 
 train, test = train_test_split(data, test_size=0.1, random_state=seed)
 del data
+train, val = train_test_split(train, test_size=0.1, random_state=seed)
 train = GraphDataSet(train)
+val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 100, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 100, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
 
 losses = []
+epoch_losses = []
 break_con = False
 for epoch in xrange(500):
+    epoch_loss = 0
     for batch in train:
         model.zero_grad()
         loss = criterion(model(batch), batch['labels'])
         losses.append(loss.item())
+        epoch_loss += loss.item()
         loss.backward()
         optimizer.step()
+    epoch_losses.append(epoch_loss)
     if 0 == (epoch+1) % 50:
-        print "epoch: {}, loss: {}".format(epoch, loss.item())
+        print "epoch: {}, loss: {}".format(epoch, epoch_loss)
     break_con = loss.item() < 0.02
     if break_con:
         break
 
+save_model(model, model_attributes)
+
 model.eval()
 labels = []
 true_labels = []
-for batch in test:
-    labels = labels + model(batch['afm'], batch['bfm'], batch['adj'], batch['mask']).max(dim=-1)[1].data.numpy().tolist()
+for batch in val:
+    labels = labels + model(batch).max(dim=-1)[1].data.numpy().tolist()
     true_labels = true_labels + batch['labels'].data.numpy().tolist()
 
 print "accuracy: {}, precision: {}, recall: {}".format(
