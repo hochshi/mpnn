@@ -55,6 +55,6 @@ def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_gr
     for graph, label in zip(graphs, LabelEncoder().fit_transform(df[label_colname].values)):
         graph.label = label
         max_label = label if label > max_label else max_label
-    return graphs, max_label
+    return graphs, (max_label+1)
 
 __all__ = ['load_classification_dataset']

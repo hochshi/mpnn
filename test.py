@@ -14,6 +14,7 @@ from models.graph_model_wrapper import GraphWrapper
 import torch
 import torch.cuda
 import cPickle as pickle
+import sys
 
 
 def count_model_params(model):
@@ -30,17 +31,18 @@ def save_model(model, model_att):
 
 seed = 317
 torch.manual_seed(seed)
+file = sys.argv[1]
 
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 try:
-    file_data = np.load('/Users/sh/Code/EAGCN/data/small_batch_test_long.npz')
+    file_data = np.load(file+'.npz')
     data = file_data['data']
     no_labels = file_data['no_labels']
     file_data.close()
 except IOError:
-    data, no_labels = load_classification_dataset('/Users/sh/Code/EAGCN/data/small_batch_test_long.csv',
+    data, no_labels = load_classification_dataset(file+'.csv',
                                               'InChI', Chem.MolFromInchi, mgf, 'target')
-    np.savez_compressed('/Users/sh/Code/EAGCN/data/small_batch_test_long.npz', data=data, no_labels=no_labels)
+    np.savez_compressed(file, data=data, no_labels=no_labels)
 
 model_attributes = {
     'node_features': data[0].afm.shape[-1],
