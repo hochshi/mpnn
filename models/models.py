@@ -67,7 +67,7 @@ class MolGraphModelNoRep(nn.Module):
                  message_agg_func=AttMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=3,
                  readout_func=Set2Vec, readout_opts={}):
-        super(MolGraphModel, self).__init__()
+        super(MolGraphModelNoRep, self).__init__()
         message_opts['node_features'] = node_features
         message_opts['edge_features'] = edge_features
         message_opts['message_features'] = message_features
