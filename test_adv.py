@@ -7,7 +7,7 @@ from pre_process.load_dataset import GraphDataSet
 from torch.utils.data import DataLoader
 from torch import nn
 from torch import optim
-from models.models import MolGraphModel as BasicModel
+from models.models import MolGraphModelNoRep as BasicModel
 import numpy as np
 from sklearn import metrics
 from models.graph_model_wrapper import GraphWrapper
