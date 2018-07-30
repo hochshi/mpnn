@@ -24,8 +24,8 @@ def count_model_params(model):
 
 def save_model(model, model_att):
     # type: (nn.Module, dict) -> None
-    torch.save(model.state_dict(), 'basic_model.state_dict')
-    with open('basic_model_attributes.pickle', 'wb') as out:
+    torch.save(model.state_dict(), 'adv_model.state_dict')
+    with open('adv_model_attributes.pickle', 'wb') as out:
         pickle.dump(model_att, out)
 
 
@@ -73,9 +73,9 @@ train, val = train_test_split(train, test_size=0.1, random_state=seed)
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
 losses = []
 epoch_losses = []
