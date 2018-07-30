@@ -85,7 +85,8 @@ class Set2Vec(nn.Module):
             self.ip = False
         else:
             raise ValueError("Invalid inner_prod type: {}".format(inner_prod))
-        self.lstmcell = LSTMCellHidden(self.nf*2, self.nf)
+        self.add_module('lstmcell', LSTMCellHidden(self.nf*2, self.nf))
+        # self.lstmcell = LSTMCellHidden(self.nf*2, self.nf)
 
     def forward(self, input_set, mask=None, mprev=None, cprev=None):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, str) -> (torch.Tensor, torch.Tensor)
