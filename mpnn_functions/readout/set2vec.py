@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import math
+from collections import OrderedDict
 
 _BIG_NEGATIVE = -1e8
 
@@ -12,40 +13,53 @@ class LSTMCellHidden(nn.Module):
         self.hd = hidden_dim
         self.cd = cell_dim
         self.bias = bias
-        self.weights = []
-        self.biases = []
+        self.weights = OrderedDict()
+        self.biases = OrderedDict()
         #Input gate
-        self.w_hi = nn.Parameter(torch.zeros([self.hd, self.cd]))
-        self.weights.append(self.w_hi)
-        self.b_hi = torch.zeros([1, self.cd])
-        self.biases.append(self.b_hi)
+        # # self.w_hi = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        # # self.weights['w_hi'] = self.w_hi
+        # self.b_hi = torch.zeros([1, self.cd])
+        # self.biases.append(self.b_hi)
+        self.weights['w_hi'] = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        self.biases['b_hi'] = nn.Parameter(torch.zeros([1, self.cd]))
         #Forget gate
-        self.w_hf = nn.Parameter(torch.zeros([self.hd, self.cd]))
-        self.weights.append(self.w_hf)
-        self.b_hf = torch.zeros([1, self.cd])
-        self.biases.append(self.b_hf)
+        # self.w_hf = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        # self.weights.append(self.w_hf)
+        # self.b_hf = torch.zeros([1, self.cd])
+        # self.biases.append(self.b_hf)
+        self.weights['w_hf'] = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        self.biases['b_hf'] = nn.Parameter(torch.zeros([1, self.cd]))
         #Gate
-        self.w_hg = nn.Parameter(torch.zeros([self.hd, self.cd]))
-        self.weights.append(self.w_hg)
-        self.b_hg = torch.zeros([1, self.cd])
-        self.biases.append(self.b_hg)
+        # self.w_hg = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        # self.weights.append(self.w_hg)
+        # self.b_hg = torch.zeros([1, self.cd])
+        # self.biases.append(self.b_hg)
+        self.weights['w_hg'] = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        self.biases['b_hg'] = nn.Parameter(torch.zeros([1, self.cd]))
         #Output gate
-        self.w_ho = nn.Parameter(torch.zeros([self.hd, self.cd]))
-        self.weights.append(self.w_ho)
-        self.b_ho = torch.zeros([1, self.cd])
-        self.biases.append(self.b_ho)
+        # self.w_ho = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        # self.weights.append(self.w_ho)
+        # self.b_ho = torch.zeros([1, self.cd])
+        # self.biases.append(self.b_ho)
+        self.weights['w_ho'] = nn.Parameter(torch.zeros([self.hd, self.cd]))
+        self.biases['b_ho'] = nn.Parameter(torch.zeros([1, self.cd]))
 
-        if bias:
-            self.b_hi = nn.Parameter(self.b_hi)
-            self.b_hf = nn.Parameter(self.b_hf)
-            self.b_hg = nn.Parameter(self.b_hg)
-            self.b_ho = nn.Parameter(self.b_ho)
+        for name, param in self.weights.iteritems():
+            self.register_parameter(name, param)
+        for name, param in self.biases.iteritems():
+            self.register_parameter(name, param)
+
+        # if bias:
+        #     self.b_hi = nn.Parameter(self.b_hi)
+        #     self.b_hf = nn.Parameter(self.b_hf)
+        #     self.b_hg = nn.Parameter(self.b_hg)
+        #     self.b_ho = nn.Parameter(self.b_ho)
 
         self.reset_parameters()
 
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.hd)
-        for weight in self.weights:
+        for weight in self.weights.itervalues():
             weight.data.uniform_(-stdv, stdv)
 
     def forward(self, hprev, cprev):
