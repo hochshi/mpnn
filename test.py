@@ -102,8 +102,8 @@ model.eval()
 labels = []
 true_labels = []
 for batch in val:
-    labels = labels + model(batch).max(dim=-1)[1].data.numpy().tolist()
-    true_labels = true_labels + batch['labels'].data.numpy().tolist()
+    labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
+    true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
 
 print "accuracy: {}, precision: {}, recall: {}".format(
     metrics.accuracy_score(true_labels, labels),
