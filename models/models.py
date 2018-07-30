@@ -38,7 +38,7 @@ class MolGraphModel(nn.Module):
             self.add_module('uf' + str(i), self.ufs[i])
         self.of = readout_func(**readout_opts)
 
-    def forward(self, afm, bfm, mask, adj):
+    def forward(self, afm, bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
         """
 
