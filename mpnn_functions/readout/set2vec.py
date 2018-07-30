@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import math
 from collections import OrderedDict
+from pre_process.load_dataset.utils import from_numpy, np
 
 _BIG_NEGATIVE = -1e8
 
@@ -104,12 +105,12 @@ class Set2Vec(nn.Module):
         """
         batch_size = input_set.shape[0]
         if mprev is None:
-            mprev = torch.zeros([batch_size, self.nf])
+            mprev = from_numpy(np.zeros([batch_size, self.nf])).float()
         # mprev shape: [batch_size, 2*node_dim]
-        mprev = torch.cat([mprev, torch.zeros([batch_size, self.nf])], dim=1)
+        mprev = torch.cat([mprev, from_numpy(np.zeros([batch_size, self.nf])).float()], dim=1)
         if cprev is None:
             #cprev shape: [batch_size, node_dim]
-            cprev = torch.zeros([batch_size, self.nf])
+            cprev = from_numpy(np.zeros([batch_size, self.nf])).float()
 
         logit_att = []
 
