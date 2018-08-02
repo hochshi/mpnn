@@ -5,6 +5,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer
+from pre_process.load_dataset.utils import Singleton
 
 
 AtomEncoder = List[LabelBinarizer]
@@ -337,7 +338,17 @@ class MolGraphFactory:
         return self.mol_graph_class(mol, self.ae, self.be, include_hs=self.in_hs, graph_class=self.graph_class)
 
 
+class GraphEncoder(object):
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        super(GraphEncoder, self).__init__()
+        self.atom_enc = None
+        self.bond_enc = None
+        self.label_enc = None
+
+
 __all__ = ['MolGraphFactory', 'Mol2DGraph', 'Mol3DGraph', 'MolGraph', 'AtomFeatures', 'BondFeatures', 'Graph',
-           'Graph2D', 'Graph3D']
+           'Graph2D', 'Graph3D', 'GraphEncoder']
 
 

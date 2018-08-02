@@ -4,6 +4,7 @@ from pre_process.load_dataset import load_classification_dataset
 from pre_process.load_dataset.data_loader import collate_2d_graphs
 from sklearn.model_selection import train_test_split
 from pre_process.load_dataset import GraphDataSet
+from pre_process.mol_graph import GraphEncoder
 from torch.utils.data import DataLoader
 from torch import nn
 from torch import optim
@@ -38,25 +39,30 @@ try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
     no_labels = int(file_data['no_labels'])
+    all_labels = file_data['all_labels']
     file_data.close()
 except IOError:
-    data, no_labels = load_classification_dataset(data_file+'.csv',
+    data, no_labels, all_labels = load_classification_dataset(data_file+'.csv',
                                               'InChI', Chem.MolFromInchi, mgf, 'target')
-    np.savez_compressed(data_file, data=data, no_labels=no_labels)
+    graph_encoder = GraphEncoder()
+    with open('basic_model_graph_encoder.pickle', 'wb') as out:
+        pickle.dump(graph_encoder, out)
+    np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 model_attributes = {
-    'node_features': data[0].afm.shape[-1],
-    'edge_features': data[0].bfm.shape[-1],
-    'message_features': 2*data[0].afm.shape[-1],
-    'adjacency_dim': data[0].adj.shape[-1],
-    'output_dim': 2*no_labels,
+    'afm': data[0].afm.shape[-1],
+    'bfm': data[0].bfm.shape[-1],
+    'mfm': data[0].afm.shape[-1],
+    'adj': data[0].adj.shape[-1],
+    'out': 4*data[0].afm.shape[-1],
     'classification_output': no_labels
 }
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(data[0].afm.shape[-1], data[0].bfm.shape[-1], 2*data[0].afm.shape[-1],
-                            data[0].adj.shape[-1], 2*no_labels)),
-    nn.Linear(2*no_labels, no_labels)
+    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
+                            model_attributes['adj'], model_attributes['out'])),
+    nn.BatchNorm1d(model_attributes['out']),
+    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
 print "Model has: {} parameters".format(count_model_params(model))
@@ -67,9 +73,13 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 model.train()
 
-train, test = train_test_split(data, test_size=0.1, random_state=seed)
+train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,
+                                                          random_state=seed, stratify=all_labels)
 del data
-train, val = train_test_split(train, test_size=0.1, random_state=seed)
+del all_labels
+del test_labels
+train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=train_labels)
+del train_labels
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
@@ -107,6 +117,6 @@ for batch in val:
 
 print "accuracy: {}, precision: {}, recall: {}".format(
     metrics.accuracy_score(true_labels, labels),
-    metrics.precision_score(true_labels, labels),
-    metrics.recall_score(true_labels, labels)
+    metrics.precision_score(true_labels, labels, average='micro'),
+    metrics.recall_score(true_labels, labels, average='micro')
 )

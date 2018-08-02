@@ -9,15 +9,18 @@ class EdgeNetwork(nn.Module):
         self.nf = node_features
         self.ef = edge_features
         self.mf = message_features
-        self.act_fn = activation_fn if activation_fn is not None else F.relu
-        self.edge_map = nn.Linear(self.ef, self.nf*self.mf)
+        self.act_fn = activation_fn if activation_fn is not None else nn.ReLU()
+        self.edge_map = nn.Sequential(
+            nn.Linear(self.ef, self.nf*self.mf),
+            self.act_fn
+        )
 
     def _precompute_edge_embed(self, bfm):
         # type: (torch.Tensor) -> None
         # "embed" each edge to a message features x node feature matrix
         # from batch x nodes x nodes x edge features
         # to batch x nodes x nodes x message features x node features
-        self.edge_embed = self.act_fn(self.edge_map(bfm).view(bfm.shape[:3] + (self.mf, self.nf)))
+        self.edge_embed = self.edge_map(bfm).view(bfm.shape[:3] + (self.mf, self.nf))
 
     def forward(self, afm, bfm, reuse_graph_tensors=False):
         if not reuse_graph_tensors:

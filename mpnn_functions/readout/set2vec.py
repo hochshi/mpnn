@@ -76,7 +76,7 @@ class LSTMCellHidden(nn.Module):
 class Set2Vec(nn.Module):
     def __init__(self, node_features, output_dim, time_steps=100, inner_prod="default", activation_fn=None, attn_act=None, dropout=0):
         super(Set2Vec, self).__init__()
-        self.nf = node_features
+        self.nf = 2*node_features
         self.steps = time_steps
         self.q_attn = nn.Linear(self.nf, self.nf, bias=False)
         if "default" == inner_prod:
@@ -93,7 +93,7 @@ class Set2Vec(nn.Module):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, str) -> (torch.Tensor, torch.Tensor)
         """
 
-        :param input_set: tensor of shape [batch_size, num_nodes, node_dim]
+        :param input_set: tensor of shape [batch_size, num_nodes, 2*node_dim]
         :param mprev:
         :type mprev:
         :param cprev:
