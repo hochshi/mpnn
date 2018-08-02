@@ -32,9 +32,9 @@ class GraphLevelOutput(nn.Module):
         # input_set, input_set_0 shape: batch x nodes x 2*node features
         # gated_activations shape: batch x nodes x output dim
         if mask is None:
-            gated_activations = self.act_fn(self.i(input_set)).mul(self.j(input_set))
+            gated_activations = self.attn_act(self.i(input_set)).mul(self.j(input_set))
         else:
             att_mask = mask.float()
-            att_mask = (1 - mask) * _BIG_NEGATIVE
-            gated_activations = self.act_fn(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
+            att_mask = (1 - att_mask) * _BIG_NEGATIVE
+            gated_activations = self.attn_act(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
         return gated_activations.sum(dim=1)
