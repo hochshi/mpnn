@@ -1,10 +1,8 @@
-import numpy as np
-from typing import List
-from pre_process.mol_graph import Graph, Graph2D
-from torch.utils import data
 from torch.autograd import Variable
+from torch.utils import data
+from typing import List
 
-from utils import *
+from mol_graph import Graph, Graph2D
 
 
 def embed_arr(arr, dims):

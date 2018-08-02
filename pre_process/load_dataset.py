@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from pre_process import MolGraphFactory, MolGraph, Graph, GraphEncoder
+from mol_graph import MolGraphFactory, MolGraph, Graph, GraphEncoder
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from typing import List, Tuple
 

@@ -1,9 +1,11 @@
+import math
+from collections import OrderedDict
+
 import torch
 from torch import nn
 from torch.nn import functional as F
-import math
-from collections import OrderedDict
-from pre_process.load_dataset.utils import from_numpy, np
+
+from pre_process.utils import from_numpy, np
 
 _BIG_NEGATIVE = -1e8
 
