@@ -1,6 +1,8 @@
 from torch.autograd import Variable
 from torch.utils import data
 from typing import List
+import numpy as np
+from utils import from_numpy
 
 from mol_graph import Graph, Graph2D
 
