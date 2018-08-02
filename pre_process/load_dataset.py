@@ -5,15 +5,16 @@ from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from typing import List, Tuple
 
 
-def generate_molgraphs(mol_strs, text2molfunc, mol_graph_factory):
+def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
     # type: (np.array, function, MolGraphFactory) -> List[MolGraph]
     m2gs = []
-    for mol_str in mol_strs:
+    for mol_str, label in zip(mol_strs, labels):
         mol = text2molfunc(mol_str)
         if mol is None:
             continue
         m2g = mol_graph_factory.prep_graph(mol)
         m2g.create_graph()
+        m2g.graph.label = label
         m2gs.append(m2g)
     return m2gs
 
@@ -53,10 +54,16 @@ def build_bond_enc(m2gs):
 def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):
     # type: (str, str, function, MolGraphFactory, str) -> Tuple(List[Graph], int)
     df = pd.read_csv(file_name)
-    graphs = [m2g.graph for m2g in encode_molgraphs(generate_molgraphs(df[moltext_colname].values, text2molfunc, mol_graph_factory))]
+    graphs = [m2g.graph for m2g in
+              encode_molgraphs(
+                  generate_molgraphs(
+                      df[moltext_colname].values, df[label_colname].values, text2molfunc, mol_graph_factory
+                  )
+              )]
+    labels = [graph.label for graph in graphs]
     max_label = np.NINF
     le = LabelEncoder()
-    encoded_labels = le.fit_transform(df[label_colname].values)
+    encoded_labels = le.fit_transform(labels)
     for graph, label in zip(graphs, encoded_labels):
         graph.label = label
         max_label = label if label > max_label else max_label

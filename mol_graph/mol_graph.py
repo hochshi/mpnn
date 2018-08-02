@@ -96,8 +96,8 @@ class Graph:
         # self.adj = np.empty(0)
         # self.t_dist = np.empty(0)
         # self.bfm = np.empty(0)
-        self.__is_encoded = False
-        self.__label = None
+        self.is_encoded = False
+        self.label = None
 
     def encode_afm(self, atom_enc):
         # type: (AtomEncoder) -> None
@@ -114,25 +114,6 @@ class Graph:
             self.encode_afm(atom_enc)
             self.encode_bfm(bond_enc)
             self.is_encoded = True
-
-    @property
-    def is_encoded(self):
-        return self.__is_encoded
-
-    @is_encoded.setter
-    def is_encoded(self, is_encoded):
-        self.__is_encoded = is_encoded
-
-    @property
-    def label(self):
-        return self.__label
-
-    @label.setter
-    def label(self, label):
-        if self.__label is None:
-            self.__label = label
-        else:
-            raise ValueError('Label is already set')
 
 
 class Graph2D(Graph):
