@@ -22,8 +22,10 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
 def encode_molgraphs(m2gs):
     # type: (List[MolGraph]) -> None
     graph_encoder = GraphEncoder()
-    graph_encoder.atom_enc = build_atom_enc(m2gs)
-    graph_encoder.bond_enc = build_bond_enc(m2gs)
+    if graph_encoder.atom_enc is None:
+        graph_encoder.atom_enc = build_atom_enc(m2gs)
+    if graph_encoder.bond_enc is None:
+        graph_encoder.bond_enc = build_bond_enc(m2gs)
 
     for m2g in m2gs:
         m2g.graph.encode(graph_encoder.atom_enc, graph_encoder.bond_enc)
@@ -62,13 +64,18 @@ def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_gr
               )]
     labels = [graph.label for graph in graphs]
     max_label = np.NINF
-    le = LabelEncoder()
-    encoded_labels = le.fit_transform(labels)
+
+    graph_encoder = GraphEncoder()
+    if graph_encoder.label_enc is None:
+        le = LabelEncoder()
+        encoded_labels = le.fit_transform(labels)
+        graph_encoder.label_enc = le
+    else:
+        encoded_labels = graph_encoder.label_enc.transform(labels)
     for graph, label in zip(graphs, encoded_labels):
         graph.label = label
         max_label = label if label > max_label else max_label
-    graph_encoder = GraphEncoder()
-    graph_encoder.label_enc = le
+
     return graphs, (max_label+1), encoded_labels
 
 __all__ = ['load_classification_dataset']
