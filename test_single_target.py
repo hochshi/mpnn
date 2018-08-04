@@ -17,6 +17,7 @@ from mol_graph import *
 from mol_graph import GraphEncoder
 from pre_process.data_loader import GraphDataSet, collate_2d_graphs
 from pre_process.load_dataset import load_classification_dataset
+import tqdm
 
 
 def count_model_params(model):
@@ -73,20 +74,22 @@ for graph in data:
     graph.label = int(selected_label == graph.label)
 
 print "Model has: {} parameters".format(count_model_params(model))
-device = 'cpu'
-if torch.cuda.is_available():
-    device = 'cuda'
 
-weights = torch.Tensor([len(all_labels) - np.count_nonzero(selected_label != all_labels),
-                        len(all_labels) - np.count_nonzero(selected_label == all_labels)])
+mask = (selected_label == all_labels)
+weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
+                        len(all_labels) - np.count_nonzero(mask)]).float()
+
 print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
-model.to(device)
-criterion = nn.CrossEntropyLoss(weights.to(device))
+if torch.cuda.is_available():
+    model.cuda()
+    weights.cuda()
+
+criterion = nn.CrossEntropyLoss(weights)
 optimizer = optim.Adam(model.parameters())
 model.train()
 
 train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,
-                                                          random_state=seed, stratify=all_labels)
+                                                          random_state=seed, stratify=mask)
 del data
 del all_labels
 del test_labels
@@ -95,6 +98,9 @@ del train_labels
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
+print "Train dataset size: {}".format(len(train))
+print "Val dataset size: {}".format(len(val))
+print "Test dataset size: {}".format(len(test))
 train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
@@ -102,9 +108,11 @@ test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 losses = []
 epoch_losses = []
 break_con = False
-for epoch in xrange(500):
+# for epoch in xrange(500):
+for epoch in tqdm.trange(500):
     epoch_loss = 0
-    for batch in train:
+    # for batch in train:
+    for batch in tqdm.tqdm(train):
         model.zero_grad()
         loss = criterion(model(batch), batch['labels'])
         losses.append(loss.item())
@@ -112,8 +120,8 @@ for epoch in xrange(500):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
-    if 0 == (epoch+1) % 50:
-        print "epoch: {}, loss: {}".format(epoch, epoch_loss)
+    # if 0 == (epoch+1) % 50:
+    #     print "epoch: {}, loss: {}".format(epoch, epoch_loss)
     break_con = loss.item() < 0.02
     if break_con:
         break
