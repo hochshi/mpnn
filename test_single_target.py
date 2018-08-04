@@ -79,6 +79,7 @@ if torch.cuda.is_available():
 
 weights = torch.Tensor([len(all_labels) - np.count_nonzero(selected_label != all_labels),
                         len(all_labels) - np.count_nonzero(selected_label == all_labels)])
+print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 model.to(device)
 criterion = nn.CrossEntropyLoss(weights.to(device))
 optimizer = optim.Adam(model.parameters())
