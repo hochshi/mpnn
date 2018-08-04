@@ -85,7 +85,8 @@ model = nn.Sequential(
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
-selected_label = np.random.choice(np.arange(no_labels))
+# selected_label = np.random.choice(np.arange(no_labels))
+selected_label = 243
 print "Target selected: {}".format(selected_label)
 
 for graph in data:
@@ -110,16 +111,27 @@ train, test, train_labels, test_labels = train_test_split(data, all_labels, test
                                                           random_state=seed, stratify=mask)
 del data
 del all_labels
-del test_labels
-train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=train_labels)
-del train_labels
-train = GraphDataSet(train)
+# del test_labels
+train, val, train_labels, val_labels = train_test_split(train, train_labels, test_size=0.1, random_state=seed, stratify=train_labels)
+# del train_labels
+# train = GraphDataSet(train)
+train_pos = GraphDataSet(train[1 == train_labels])
+train_neg = GraphDataSet(train[0 == train_labels])
 val = GraphDataSet(val)
+# val_pos = GraphDataSet(val[1 == val_labels])
+# val_neg = GraphDataSet(val[0 == val_labels])
 test = GraphDataSet(test)
-print "Train dataset size: {}".format(len(train))
-print "Val dataset size: {}".format(len(val))
-print "Test dataset size: {}".format(len(test))
-train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
+# test_pos = GraphDataSet(test[1 == test_labels])
+# test_neg = GraphDataSet(test[0 == test_labels])
+
+# print "Train dataset size: {}, {}".format(len(train), sum(train_labels))
+print "Train pos dataset size: {}, {}".format(len(train_pos))
+print "Train neg dataset size: {}, {}".format(len(train_neg))
+print "Val dataset size: {}, {}".format(len(val), sum(val_labels))
+print "Test dataset size: {}, {}".format(len(test), sum(test_labels))
+# train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
+train_pos = DataLoader(train_pos, 8, shuffle=True)
+train_neg = DataLoader(train_neg, 8, shuffle=True)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
@@ -130,7 +142,11 @@ break_con = False
 for epoch in tqdm.trange(500):
     epoch_loss = 0
     # for batch in train:
-    for batch in tqdm.tqdm(train):
+    # for batch in tqdm.tqdm(train):
+    for batch_pos, batch_neg in tqdm.tqdm(zip(train_pos, train_neg)):
+        batch = batch_pos + batch_neg
+        np.random.shuffle(batch)
+        batch = collate_2d_graphs(batch)
         model.zero_grad()
         loss = criterion(model(batch), batch['labels'])
         losses.append(loss.item())
