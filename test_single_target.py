@@ -108,7 +108,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 model.train()
 
-train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,
+train, test, train_labels, test_labels = train_test_split(data, mask, test_size=0.1,
                                                           random_state=seed, stratify=mask)
 del data
 del all_labels
@@ -131,8 +131,8 @@ print "Train neg dataset size: {}".format(len(train_neg))
 print "Val dataset size: {}, {}".format(len(val), sum(val_labels))
 print "Test dataset size: {}, {}".format(len(test), sum(test_labels))
 # train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-train_pos = DataLoader(train_pos, 8, shuffle=True)
-train_neg = DataLoader(train_neg, 8, shuffle=True)
+train_pos = DataLoader(train_pos, 8, shuffle=True, collate_fn=lambda x: x)
+train_neg = DataLoader(train_neg, 8, shuffle=True, collate_fn=lambda x: x)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
@@ -144,16 +144,17 @@ for epoch in tqdm.trange(500):
     epoch_loss = 0
     # for batch in train:
     # for batch in tqdm.tqdm(train):
-    for batch_pos, batch_neg in tqdm.tqdm(zip(train_pos, train_neg)):
-        batch = batch_pos + batch_neg
-        np.random.shuffle(batch)
-        batch = collate_2d_graphs(batch)
-        model.zero_grad()
-        loss = criterion(model(batch), batch['labels'])
-        losses.append(loss.item())
-        epoch_loss += loss.item()
-        loss.backward()
-        optimizer.step()
+    for batch_pos in tqdm.tqdm(train_pos):
+        for batch_neg in tqdm.tqdm(train_neg):
+            batch = batch_pos + batch_neg
+            np.random.shuffle(batch)
+            batch = collate_2d_graphs(batch)
+            model.zero_grad()
+            loss = criterion(model(batch), batch['labels'])
+            losses.append(loss.item())
+            epoch_loss += loss.item()
+            loss.backward()
+            optimizer.step()
     epoch_losses.append(epoch_loss)
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
