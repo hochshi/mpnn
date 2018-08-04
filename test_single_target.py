@@ -100,7 +100,7 @@ mask = (selected_label == all_labels)
 weights = torch.Tensor([1,
                         float(np.count_nonzero(mask))/np.count_nonzero(~mask)]).float()
 
-# print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
+print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
     weights = weights.cuda()
@@ -153,7 +153,7 @@ for epoch in tqdm.trange(500):
     #     np.random.shuffle(batch)
     #     batch = collate_2d_graphs(batch)
         model.zero_grad()
-        loss = criterion(model(batch), batch['labels'])
+        loss = criterion(model(batch), torch.cat([1-batch['labels'].float().unsqueeze(-1), batch['labels'].float().unsqueeze(-1)], dim=-1))
         losses.append(loss.item())
         epoch_loss += loss.item()
         loss.backward()
