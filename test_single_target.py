@@ -75,7 +75,7 @@ model_attributes = {
     'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 4*data[0].afm.shape[-1],
-    'classification_output': 2
+    'classification_output': 1
 }
 
 model = nn.Sequential(
@@ -97,8 +97,7 @@ print "Model has: {} parameters".format(count_model_params(model))
 mask = (selected_label == all_labels)
 # weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
 #                         len(all_labels) - np.count_nonzero(mask)]).float()
-weights = torch.Tensor([1,
-                        np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
+weights = torch.Tensor([np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
 
 print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
@@ -153,7 +152,7 @@ for epoch in tqdm.trange(500):
     #     np.random.shuffle(batch)
     #     batch = collate_2d_graphs(batch)
         model.zero_grad()
-        loss = criterion(model(batch), torch.cat([1-batch['labels'].float().unsqueeze(-1), batch['labels'].float().unsqueeze(-1)], dim=-1))
+        loss = criterion(model(batch), batch['labels'].float())
         losses.append(loss.item())
         epoch_loss += loss.item()
         loss.backward()
