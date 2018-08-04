@@ -32,6 +32,24 @@ def save_model(model, model_att, label):
         pickle.dump(model_att, out)
 
 
+def test_model(model, dataset):
+    model.eval()
+    labels = []
+    true_labels = []
+    for batch in dataset:
+        labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
+        true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
+    return (
+        metrics.accuracy_score(true_labels, labels),
+        metrics.precision_score(true_labels, labels, average='binary'),
+        metrics.recall_score(true_labels, labels, average='binary')
+    )
+    # print "accuracy: {}, precision: {}, recall: {}".format(
+    #     metrics.accuracy_score(true_labels, labels),
+    #     metrics.precision_score(true_labels, labels, average='binary'),
+    #     metrics.recall_score(true_labels, labels, average='binary')
+    # )
+
 seed = 317
 torch.manual_seed(seed)
 data_file = sys.argv[1]
@@ -82,7 +100,7 @@ weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
 print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
-    weights.cuda()
+    weights = weights.cuda()
 
 criterion = nn.CrossEntropyLoss(weights)
 optimizer = optim.Adam(model.parameters())
@@ -120,23 +138,14 @@ for epoch in tqdm.trange(500):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
+    acc, pre, rec = test_model(model, val)
+    f1 = 2 * (pre * rec) / (pre + rec)
+    tqdm.tqdm.write("validation acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
     # if 0 == (epoch+1) % 50:
     #     print "epoch: {}, loss: {}".format(epoch, epoch_loss)
-    break_con = loss.item() < 0.02
-    if break_con:
-        break
+    # break_con = loss.item() < 0.02
+    # if break_con:
+    #     break
 
-save_model(model, model_attributes)
+save_model(model, model_attributes, selected_label)
 
-model.eval()
-labels = []
-true_labels = []
-for batch in val:
-    labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
-    true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
-
-print "accuracy: {}, precision: {}, recall: {}".format(
-    metrics.accuracy_score(true_labels, labels),
-    metrics.precision_score(true_labels, labels, average='binary'),
-    metrics.recall_score(true_labels, labels, average='binary')
-)
