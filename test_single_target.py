@@ -95,16 +95,17 @@ for graph in data:
 print "Model has: {} parameters".format(count_model_params(model))
 
 mask = (selected_label == all_labels)
-# weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
-#                         len(all_labels) - np.count_nonzero(mask)]).float()
+weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
+                        len(all_labels) - np.count_nonzero(mask)]).float()
 
 # print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
-    # weights = weights.cuda()
+    weights = weights.cuda()
 
 # criterion = nn.CrossEntropyLoss(weights)
-criterion = nn.CrossEntropyLoss()
+# criterion = nn.CrossEntropyLoss()
+criterion = nn.BCELoss(weights)
 optimizer = optim.Adam(model.parameters())
 model.train()
 
@@ -115,9 +116,9 @@ del all_labels
 # del test_labels
 train, val, train_labels, val_labels = train_test_split(train, train_labels, test_size=0.1, random_state=seed, stratify=train_labels)
 # del train_labels
-# train = GraphDataSet(train)
-train_pos = GraphDataSet(train[1 == train_labels])
-train_neg = GraphDataSet(train[0 == train_labels])
+train = GraphDataSet(train)
+# train_pos = GraphDataSet(train[1 == train_labels])
+# train_neg = GraphDataSet(train[0 == train_labels])
 val = GraphDataSet(val)
 # val_pos = GraphDataSet(val[1 == val_labels])
 # val_neg = GraphDataSet(val[0 == val_labels])
@@ -125,14 +126,14 @@ test = GraphDataSet(test)
 # test_pos = GraphDataSet(test[1 == test_labels])
 # test_neg = GraphDataSet(test[0 == test_labels])
 
-# print "Train dataset size: {}, {}".format(len(train), sum(train_labels))
-print "Train pos dataset size: {}".format(len(train_pos))
-print "Train neg dataset size: {}".format(len(train_neg))
+print "Train dataset size: {}, {}".format(len(train), sum(train_labels))
+# print "Train pos dataset size: {}".format(len(train_pos))
+# print "Train neg dataset size: {}".format(len(train_neg))
 print "Val dataset size: {}, {}".format(len(val), sum(val_labels))
 print "Test dataset size: {}, {}".format(len(test), sum(test_labels))
-# train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-train_pos = DataLoader(train_pos, 8, shuffle=True, collate_fn=lambda x: x)
-train_neg = DataLoader(train_neg, 8, shuffle=True, collate_fn=lambda x: x)
+train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
+# train_pos = DataLoader(train_pos, 8, shuffle=True, collate_fn=lambda x: x)
+# train_neg = DataLoader(train_neg, 8, shuffle=True, collate_fn=lambda x: x)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
@@ -143,18 +144,18 @@ break_con = False
 for epoch in tqdm.trange(500):
     epoch_loss = 0
     # for batch in train:
-    # for batch in tqdm.tqdm(train):
-    for batch_pos in tqdm.tqdm(train_pos):
-        for batch_neg in tqdm.tqdm(train_neg):
-            batch = batch_pos + batch_neg
-            np.random.shuffle(batch)
-            batch = collate_2d_graphs(batch)
-            model.zero_grad()
-            loss = criterion(model(batch), batch['labels'])
-            losses.append(loss.item())
-            epoch_loss += loss.item()
-            loss.backward()
-            optimizer.step()
+    for batch in tqdm.tqdm(train):
+    # for batch_pos in tqdm.tqdm(train_pos):
+    #     for batch_neg in tqdm.tqdm(train_neg):
+    #     batch = batch_pos + batch_neg
+    #     np.random.shuffle(batch)
+    #     batch = collate_2d_graphs(batch)
+        model.zero_grad()
+        loss = criterion(model(batch), batch['labels'])
+        losses.append(loss.item())
+        epoch_loss += loss.item()
+        loss.backward()
+        optimizer.step()
     epoch_losses.append(epoch_loss)
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
