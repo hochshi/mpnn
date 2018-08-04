@@ -98,7 +98,7 @@ mask = (selected_label == all_labels)
 # weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
 #                         len(all_labels) - np.count_nonzero(mask)]).float()
 weights = torch.Tensor([1,
-                        float(np.count_nonzero(mask))/np.count_nonzero(~mask)]).float()
+                        np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
 
 print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
