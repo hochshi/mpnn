@@ -36,7 +36,7 @@ def test_model(model, dataset):
     model.eval()
     labels = []
     true_labels = []
-    for batch in dataset:
+    for batch in tqdm.tqdm(dataset):
         labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
         true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
     return (
@@ -140,7 +140,7 @@ for epoch in tqdm.trange(500):
     epoch_losses.append(epoch_loss)
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
-    tqdm.tqdm.write("validation acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
+    tqdm.tqdm.write("epoch {} training loss: {}, validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc, pre, rec, f1))
     # if 0 == (epoch+1) % 50:
     #     print "epoch: {}, loss: {}".format(epoch, epoch_loss)
     # break_con = loss.item() < 0.02
