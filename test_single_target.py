@@ -95,15 +95,16 @@ for graph in data:
 print "Model has: {} parameters".format(count_model_params(model))
 
 mask = (selected_label == all_labels)
-weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
-                        len(all_labels) - np.count_nonzero(mask)]).float()
+# weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
+#                         len(all_labels) - np.count_nonzero(mask)]).float()
 
-print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
+# print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
-    weights = weights.cuda()
+    # weights = weights.cuda()
 
-criterion = nn.CrossEntropyLoss(weights)
+# criterion = nn.CrossEntropyLoss(weights)
+criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 model.train()
 
