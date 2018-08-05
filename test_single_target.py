@@ -75,7 +75,7 @@ model_attributes = {
     'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 4*data[0].afm.shape[-1],
-    'classification_output': 1
+    'classification_output': 2
 }
 
 model = nn.Sequential(
@@ -97,16 +97,16 @@ print "Model has: {} parameters".format(count_model_params(model))
 mask = (selected_label == all_labels)
 # weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
 #                         len(all_labels) - np.count_nonzero(mask)]).float()
-weights = torch.Tensor([np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
+weights = torch.Tensor([float(np.count_nonzero(mask))/np.count_nonzero(~mask), np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
 
 print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
     weights = weights.cuda()
 
-# criterion = nn.CrossEntropyLoss(weights)
+criterion = nn.CrossEntropyLoss(weights)
 # criterion = nn.CrossEntropyLoss()
-criterion = nn.BCEWithLogitsLoss(pos_weight=weights)
+# criterion = nn.BCEWithLogitsLoss(pos_weight=weights)
 optimizer = optim.Adam(model.parameters())
 model.train()
 
