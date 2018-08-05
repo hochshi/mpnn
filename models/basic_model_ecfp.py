@@ -5,7 +5,7 @@ from mpnn_functions import *
 class BasicModel(nn.Module):
 
     def __init__(self, node_features, edge_features, message_features, adjacency_dim, output_dim,
-                 message_func=EdgeNetwork, message_opts={},
+                 message_func=BiLiniearEdgeNetwork, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=2,
                  readout_func=GraphLevelOutput, readout_opts={}):
