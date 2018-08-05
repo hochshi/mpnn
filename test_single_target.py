@@ -17,6 +17,7 @@ from mol_graph import *
 from mol_graph import GraphEncoder
 from pre_process.data_loader import GraphDataSet, collate_2d_graphs
 from pre_process.load_dataset import load_classification_dataset
+from mpnn_functions.encoders import Autoencoder
 import tqdm
 
 
@@ -54,6 +55,11 @@ seed = 317
 torch.manual_seed(seed)
 data_file = sys.argv[1]
 
+atom_enc = Autoencoder(in_dim=30, mid_dim=16, e_dim=4)
+bond_enc = Autoencoder(in_dim=8, mid_dim=16, e_dim=64)
+atom_enc.load_state_dict(torch.load('./atom_encoder.state_dict', map_location=lambda storage, loc: storage))
+bond_enc.load_state_dict(torch.load('./bond_encoder.state_dict', map_location=lambda storage, loc: storage))
+
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 try:
     file_data = np.load(data_file+'.npz')
@@ -70,16 +76,16 @@ except IOError:
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 model_attributes = {
-    'afm': data[0].afm.shape[-1],
-    'bfm': data[0].bfm.shape[-1],
-    'mfm': data[0].afm.shape[-1],
-    'adj': data[0].adj.shape[-1],
-    'out': 6*data[0].afm.shape[-1],
+    'afm': 4,
+    'bfm': 64,
+    'mfm': 4,
+    'adj': 1,
+    'out': 24,
     'classification_output': 2
 }
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
+    GraphWrapper(BasicModel(atom_enc.encoder, bond_enc.encoder, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])

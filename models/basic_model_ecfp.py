@@ -4,12 +4,15 @@ from mpnn_functions import *
 
 class BasicModel(nn.Module):
 
-    def __init__(self, node_features, edge_features, message_features, adjacency_dim, output_dim,
+    def __init__(self, atom_enc, bond_enc, node_features, edge_features, message_features, adjacency_dim, output_dim,
                  message_func=BiLiniearEdgeNetwork, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=2,
                  readout_func=GraphLevelOutput, readout_opts={}):
         super(BasicModel, self).__init__()
+
+        self.add_module('atom_enc', atom_enc)
+        self.add_module('bond_enc', bond_enc)
 
         message_opts['node_features'] = node_features
         message_opts['edge_features'] = edge_features
@@ -47,6 +50,8 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
+        afm = self.atom_enc(afm)
+        bfm = self.bond_enc(bfm)
         states = [afm]
         for i in range(self.iters):
             # messages = self.mfs[i](afm, bfm)

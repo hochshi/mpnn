@@ -14,8 +14,7 @@ from torch.utils.data import DataLoader
 from models.graph_model_wrapper import GraphWrapper
 from models.models import MolGraphModelNoRep as BasicModel
 from mol_graph import *
-from pre_process.data_loader import collate_2d_graphs
-from pre_process.load_dataset import GraphDataSet
+from pre_process.data_loader import collate_2d_graphs, GraphDataSet
 from pre_process.load_dataset import load_classification_dataset
 
 
