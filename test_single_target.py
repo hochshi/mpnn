@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.basic_model import BasicModel
+from models.basic_model_ecfp import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
@@ -74,7 +74,7 @@ model_attributes = {
     'bfm': data[0].bfm.shape[-1],
     'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
-    'out': 4*data[0].afm.shape[-1],
+    'out': 6*data[0].afm.shape[-1],
     'classification_output': 2
 }
 
