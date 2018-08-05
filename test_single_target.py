@@ -152,7 +152,7 @@ for epoch in tqdm.trange(500):
     #     np.random.shuffle(batch)
     #     batch = collate_2d_graphs(batch)
         model.zero_grad()
-        loss = criterion(model(batch).squeeze(), batch['labels'].float())
+        loss = criterion(model(batch).squeeze(), batch['labels'].long())
         losses.append(loss.item())
         epoch_loss += loss.item()
         loss.backward()
