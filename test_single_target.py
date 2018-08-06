@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.basic_model_ecfp import BasicModel
+from models.basic_model import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
@@ -76,16 +76,16 @@ except IOError:
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 model_attributes = {
-    'afm': 4,
-    'bfm': 64,
-    'mfm': 4,
+    'afm': 30,
+    'bfm': 8,
+    'mfm': 30,
     'adj': 1,
-    'out': 24,
+    'out': 16,
     'classification_output': 2
 }
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(atom_enc.encoder, bond_enc.encoder, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
+    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
@@ -103,15 +103,15 @@ print "Model has: {} parameters".format(count_model_params(model))
 mask = (selected_label == all_labels)
 # weights = torch.Tensor([len(all_labels) - np.count_nonzero(~mask),
 #                         len(all_labels) - np.count_nonzero(mask)]).float()
-weights = torch.Tensor([float(np.count_nonzero(mask))/np.count_nonzero(~mask), np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
+# weights = torch.Tensor([float(np.count_nonzero(mask))/np.count_nonzero(~mask), np.count_nonzero(~mask)/float(np.count_nonzero(mask))]).float()
 
-print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
+# print "loss weights: {}".format(weights.data.cpu().numpy().tolist())
 if torch.cuda.is_available():
     model.cuda()
-    weights = weights.cuda()
+    # weights = weights.cuda()
 
-criterion = nn.CrossEntropyLoss(weights)
-# criterion = nn.CrossEntropyLoss()
+# criterion = nn.CrossEntropyLoss(weights)
+criterion = nn.CrossEntropyLoss()
 # criterion = nn.BCEWithLogitsLoss(pos_weight=weights)
 optimizer = optim.Adam(model.parameters())
 model.train()
