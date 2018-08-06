@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.basic_model import BasicModel
+from models.basic_model_ecfp import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
@@ -76,16 +76,16 @@ except IOError:
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 model_attributes = {
-    'afm': 30,
-    'bfm': 8,
-    'mfm': 30,
+    'afm': 4,
+    'bfm': 64,
+    'mfm': 4,
     'adj': 1,
-    'out': 16,
+    'out': 8,
     'classification_output': 2
 }
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
+    GraphWrapper(BasicModel(atom_enc, bond_enc, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
