@@ -9,9 +9,7 @@ from mol_graph import Graph, Graph2D
 
 def embed_arr(arr, dims):
     new_arr = np.zeros(dims)
-    mask = np.zeros(dims).astype(bool)
-    mask[np.ix_(*[range(dim) for dim in arr.shape])] = True
-    np.putmask(new_arr, mask, arr)
+    new_arr[:arr.shape[0], :arr.shape[1]] = arr
     return new_arr
 
 

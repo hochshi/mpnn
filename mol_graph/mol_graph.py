@@ -154,7 +154,6 @@ class MolGraph:
     @abstractmethod
     def __init__(self, mol, atom_extractor, bond_extractor, include_hs=False, graph_class=Graph2D):
         # type: (Chem.Atom, AtomFeatures, BondFeatures, bool) -> object
-        AllChem.SanitizeMol(mol)
         self.mol = mol
         self.include_hs = include_hs
         if include_hs:

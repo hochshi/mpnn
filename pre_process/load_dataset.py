@@ -3,6 +3,8 @@ import pandas as pd
 from mol_graph import MolGraphFactory, MolGraph, Graph, GraphEncoder
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from typing import List, Tuple
+from rdkit.Chem import AllChem
+from utils import choose_largest_fragment
 
 
 def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
@@ -12,6 +14,8 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
         mol = text2molfunc(mol_str)
         if mol is None:
             continue
+        mol = AllChem.SanitizeMol(mol)
+        # mol = choose_largest_fragment(mol)
         m2g = mol_graph_factory.prep_graph(mol)
         m2g.create_graph()
         m2g.graph.label = label
