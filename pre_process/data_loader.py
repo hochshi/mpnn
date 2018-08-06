@@ -15,7 +15,7 @@ def embed_arr(arr, dims):
 
 def create_mask(arr_dims, dims):
     mask = np.zeros(dims)
-    mask[np.ix_(*[range(dim) for dim in arr_dims])] = 1
+    mask[:arr_dims[0],:] = 1
     return mask
 
 
