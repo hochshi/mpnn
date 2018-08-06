@@ -80,7 +80,7 @@ model_attributes = {
     'bfm': 64,
     'mfm': 4,
     'adj': 1,
-    'out': 8,
+    'out': 24,
     'classification_output': 2
 }
 
@@ -88,7 +88,10 @@ model = nn.Sequential(
     GraphWrapper(BasicModel(atom_enc.encoder, bond_enc.encoder, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    nn.Linear(model_attributes['out'], 8),
+    nn.ReLU(),
+    nn.BatchNorm1d(8),
+    nn.Linear(8, model_attributes['classification_output'])
 )
 
 # selected_label = np.random.choice(np.arange(no_labels))
@@ -173,5 +176,5 @@ for epoch in tqdm.trange(500):
     # if break_con:
     #     break
 
-save_model(model, model_attributes, selected_label)
+# save_model(model, model_attributes, selected_label)
 
