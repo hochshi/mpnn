@@ -85,7 +85,7 @@ model_attributes = {
 }
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(atom_enc, bond_enc, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
+    GraphWrapper(BasicModel(atom_enc.encoder, bond_enc.encoder, model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])

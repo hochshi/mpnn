@@ -59,5 +59,5 @@ class BasicModel(nn.Module):
             # afm = self.ufs[i](agg_messages, afm, mask)
             # in one line:
             # afm = self.ufs[i](self.mas[i](self.mfs[i](afm, bfm), adj), afm, mask)
-            states.append(self.uf(self.ma(self.mf(afm, bfm, reuse_graph_tensors=(i>0)), adj), afm, mask))
+            states.append(self.uf(self.ma(self.mf(states[-1], bfm, reuse_graph_tensors=(i>0)), adj), afm, mask))
         return self.of(torch.cat(states, dim=-1), mask=mask)
