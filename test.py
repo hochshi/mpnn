@@ -30,7 +30,7 @@ def save_model(model, model_name, model_att, model_metrics):
     torch.save(model.state_dict(), 'basic_model' + str(model_name) + '.state_dict')
     with open('basic_model_attributes.pickle', 'wb') as out_file:
         pickle.dump(model_att, out_file)
-    with open('basic_model' + str(model_name) + '.pickle', 'wb') as out_file:
+    with open('basic_model_' + str(model_name) + '_stats.pickle', 'wb') as out_file:
         pickle.dump(model_metrics, out_file)
 
 
@@ -44,8 +44,8 @@ def test_model(model, dataset):
             true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
     return (
         metrics.accuracy_score(true_labels, labels),
-        metrics.precision_score(true_labels, labels, average='micro'),
-        metrics.recall_score(true_labels, labels, average='micro')
+        metrics.precision_score(true_labels, labels, average='weighted'),
+        metrics.recall_score(true_labels, labels, average='weighted')
     )
 
 seed = 317
@@ -122,7 +122,7 @@ for epoch in tqdm.trange(500):
     tqdm.tqdm.write(
         "epoch {} training loss: {}, validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
                                                                                           pre, rec, f1))
-    if not np.isnan(f1) and f1 > 0.5:
+    if not np.isnan(f1) and f1 > 0.7:
         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
     # epoch_losses.append(epoch_loss)
     # if 0 == (epoch+1) % 50:
