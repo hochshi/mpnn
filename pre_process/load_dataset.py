@@ -14,7 +14,7 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
         mol = text2molfunc(mol_str)
         if mol is None:
             continue
-        mol = AllChem.SanitizeMol(mol)
+        AllChem.SanitizeMol(mol)
         # mol = choose_largest_fragment(mol)
         m2g = mol_graph_factory.prep_graph(mol)
         m2g.create_graph()
