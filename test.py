@@ -109,6 +109,7 @@ losses = []
 epoch_losses = []
 break_con = False
 for epoch in tqdm.trange(500):
+    model.train()
     epoch_loss = 0
     for batch in tqdm.tqdm(train):
         model.zero_grad()
@@ -122,7 +123,7 @@ for epoch in tqdm.trange(500):
     tqdm.tqdm.write(
         "epoch {} training loss: {}, validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
                                                                                           pre, rec, f1))
-    if not np.isnan(f1) and f1 > 0.7:
+    if not np.isnan(f1) and f1 > 0.78:
         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
     # epoch_losses.append(epoch_loss)
     # if 0 == (epoch+1) % 50:
