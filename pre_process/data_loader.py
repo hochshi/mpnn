@@ -36,7 +36,7 @@ def collate_2d_graphs(graphs):
         'adj': Variable(from_numpy(adjs).half()),
         't_dist': Variable(from_numpy(t_dists).half()),
         'mask': Variable(from_numpy(afm_masks).half()),
-        'labels': Variable(from_numpy(labels))
+        'labels': Variable(from_numpy(labels).long())
         }
 
 
