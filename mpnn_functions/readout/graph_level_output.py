@@ -35,6 +35,6 @@ class GraphLevelOutput(nn.Module):
             gated_activations = self.attn_act(self.i(input_set)).mul(self.j(input_set))
         else:
             # att_mask = mask.half()
-            att_mask = ((1 - mask.float()) * _BIG_NEGATIVE).half()
+            att_mask = ((1 - mask.float()) * _BIG_NEGATIVE).float()
             gated_activations = self.attn_act(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
         return gated_activations.sum(dim=1)
