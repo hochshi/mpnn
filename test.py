@@ -15,9 +15,11 @@ from models.basic_model import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
-from pre_process.data_loader import GraphDataSet, collate_2d_graphs
+from pre_process.data_loader import GraphDataSet, collate_2d_graphs, collate_2d_tensors
 from pre_process.load_dataset import load_classification_dataset
 import tqdm
+
+from  pre_process.utils import from_numpy
 
 
 def count_model_params(model):
@@ -57,10 +59,10 @@ try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
     for graph in data:
-        graph.afm = graph.afm.astype(np.float32)
-        graph.bfm = graph.bfm.astype(np.float32)
-        graph.adj = graph.adj.astype(np.float32)
-        graph.adj = graph.adj.astype(np.float32)
+        graph.mask = from_numpy(np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1))
+        graph.afm = from_numpy(graph.afm.astype(np.float32))
+        graph.bfm = from_numpy(graph.bfm.astype(np.float32))
+        graph.adj = from_numpy(graph.adj.astype(np.float32))
         graph.label = long(graph.label)
     no_labels = int(file_data['no_labels'])
     all_labels = file_data['all_labels']
@@ -112,9 +114,9 @@ del train_labels
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_tensors)
+val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_tensors)
+test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_tensors)
 
 losses = []
 epoch_losses = []

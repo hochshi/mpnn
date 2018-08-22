@@ -1,5 +1,7 @@
+import torch
 from torch.autograd import Variable
 from torch.utils import data
+from torch.nn import functional as F
 from typing import List
 import numpy as np
 from utils import from_numpy
@@ -17,6 +19,32 @@ def create_mask(arr_dims, dims):
     mask = np.zeros(dims, dtype=np.float32)
     mask[:arr_dims[0],:] = 1
     return mask
+
+
+def collate_2d_tensors(graphs):
+    max_graph = np.argmax([graph.afm.shape[0] for graph in graphs])
+    max_size = np.max([graph.afm.shape[0] for graph in graphs])
+    # afm shape is nodes x features
+    afms = [F.pad(graph.afm, (0, 0, 0, max_size - graph.afm.shape[0]), "constant", 0).unsqueeze(0) for graph in graphs]
+    afms = torch.cat(afms, dim=0)
+    # bfm shape is nodes x nodes x features
+    bfms = [F.pad(graph.bfm, (0, 0, 0, max_size - graph.afm.shape[0], 0, max_size - graph.afm.shape[0]), "constant", 0).unsqueeze(0) for graph in graphs]
+    bfms = torch.cat(bfms, dim=0)
+    # adj shape is nodes x nodes
+    adjs = [F.pad(graph.adj, (0, max_size - graph.afm.shape[0], 0, max_size - graph.afm.shape[0]), "constant", 0).unsqueeze(0) for graph in graphs]
+    adjs = torch.cat(adjs, dim=0)
+    # afm_mask shape is nodes x 1
+    afm_masks = [F.pad(graph.mask, (0, 0, 0, max_size - graph.afm.shape[0]), "constant", 0).unsqueeze(0) for graph in graphs]
+    afm_masks = torch.cat(afm_masks, dim=0)
+    labels = from_numpy(np.array([graph.label for graph in graphs]))
+
+    return {
+        'afm': Variable(afms),
+        'bfm': Variable(bfms),
+        'adj': Variable(adjs),
+        'mask': Variable(afm_masks),
+        'labels': Variable(labels)
+    }
 
 
 def collate_2d_graphs(graphs):
