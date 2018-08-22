@@ -57,10 +57,10 @@ try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
     for graph in data:
-        graph.afm = graph.afm.astype(np.float16)
-        graph.bfm = graph.bfm.astype(np.float16)
-        graph.adj = graph.adj.astype(np.float16)
-        graph.adj = graph.adj.astype(np.float16)
+        graph.afm = graph.afm.astype(np.float32)
+        graph.bfm = graph.bfm.astype(np.float32)
+        graph.adj = graph.adj.astype(np.float32)
+        graph.adj = graph.adj.astype(np.float32)
         graph.label = long(graph.label)
     no_labels = int(file_data['no_labels'])
     all_labels = file_data['all_labels']
@@ -89,10 +89,10 @@ model = nn.Sequential(
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
-model.half()  # convert to half precision
-for layer in model.modules():
-    if isinstance(layer, nn.BatchNorm1d):
-        layer.float()
+model.float()  # convert to half precision
+# for layer in model.modules():
+#     if isinstance(layer, nn.BatchNorm1d):
+#         layer.float()
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():

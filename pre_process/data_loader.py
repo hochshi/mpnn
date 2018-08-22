@@ -8,13 +8,13 @@ from mol_graph import Graph, Graph2D
 
 
 def embed_arr(arr, dims):
-    new_arr = np.zeros(dims, dtype=np.float16)
+    new_arr = np.zeros(dims, dtype=np.float32)
     new_arr[:arr.shape[0], :arr.shape[1]] = arr
     return new_arr
 
 
 def create_mask(arr_dims, dims):
-    mask = np.zeros(dims, dtype=np.float16)
+    mask = np.zeros(dims, dtype=np.float32)
     mask[:arr_dims[0],:] = 1
     return mask
 
