@@ -6,11 +6,11 @@ from rdkit.Chem import rdMolDescriptors
 if torch.cuda.is_available():
     def from_numpy(arr):
         # type: (np.ndarray) -> torch.Tensor
-        return torch.from_numpy(arr).cuda()
+        return torch.from_numpy(arr).half().cuda()
 else:
     def from_numpy(arr):
         # type: (np.ndarray) -> torch.Tensor
-        return torch.from_numpy(arr)
+        return torch.from_numpy(arr).half()
 
 
 class Singleton(type):

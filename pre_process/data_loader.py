@@ -31,11 +31,11 @@ def collate_2d_graphs(graphs):
     labels = np.array([graph.label for graph in graphs])
 
     return {
-        'afm': Variable(from_numpy(afms).float()),
-        'bfm': Variable(from_numpy(bfms).float()),
-        'adj': Variable(from_numpy(adjs).float()),
-        't_dist': Variable(from_numpy(t_dists).float()),
-        'mask': Variable(from_numpy(afm_masks).float()),
+        'afm': Variable(from_numpy(afms).half()),
+        'bfm': Variable(from_numpy(bfms).half()),
+        'adj': Variable(from_numpy(adjs).half()),
+        't_dist': Variable(from_numpy(t_dists).half()),
+        'mask': Variable(from_numpy(afm_masks).half()),
         'labels': Variable(from_numpy(labels))
         }
 

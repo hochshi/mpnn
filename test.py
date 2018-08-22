@@ -79,9 +79,14 @@ model_attributes = {
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
-    nn.BatchNorm1d(model_attributes['out']),
+    # nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
+
+model.half()  # convert to half precision
+for layer in model.modules():
+    if isinstance(layer, nn.BatchNorm1d):
+        layer.float()
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():

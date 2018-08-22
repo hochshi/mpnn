@@ -107,17 +107,17 @@ class Set2Vec(nn.Module):
         """
         batch_size = input_set.shape[0]
         if mprev is None:
-            mprev = from_numpy(np.zeros([batch_size, self.nf])).float()
+            mprev = from_numpy(np.zeros([batch_size, self.nf])).half()
         # mprev shape: [batch_size, 2*node_dim]
-        mprev = torch.cat([mprev, from_numpy(np.zeros([batch_size, self.nf])).float()], dim=1)
+        mprev = torch.cat([mprev, from_numpy(np.zeros([batch_size, self.nf])).half()], dim=1)
         if cprev is None:
             #cprev shape: [batch_size, node_dim]
-            cprev = from_numpy(np.zeros([batch_size, self.nf])).float()
+            cprev = from_numpy(np.zeros([batch_size, self.nf])).half()
 
         logit_att = []
 
         if mask is not None:
-            mask = mask.float()
+            mask = mask.half()
             mask = (1 - mask) * _BIG_NEGATIVE
 
         for i in range(self.steps):
