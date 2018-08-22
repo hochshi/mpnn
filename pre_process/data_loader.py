@@ -26,17 +26,17 @@ def collate_2d_graphs(graphs):
     afms = np.array([embed_arr(graph.afm, max_dims) for graph in graphs])
     bfms = np.array([embed_arr(graph.bfm, graphs[max_size].bfm.shape) for graph in graphs])
     adjs = np.array([embed_arr(graph.adj, graphs[max_size].adj.shape) for graph in graphs])
-    t_dists = np.array([embed_arr(graph.t_dist, graphs[max_size].t_dist.shape) for graph in graphs])
+    # t_dists = np.array([embed_arr(graph.t_dist, graphs[max_size].t_dist.shape) for graph in graphs])
     afm_masks = np.array([create_mask(graph.afm.shape[:-1]+(1,), max_dims[:-1] + (1,)) for graph in graphs])
     labels = np.array([graph.label for graph in graphs])
 
     return {
-        'afm': Variable(from_numpy(afms).half()),
-        'bfm': Variable(from_numpy(bfms).half()),
-        'adj': Variable(from_numpy(adjs).half()),
-        't_dist': Variable(from_numpy(t_dists).half()),
-        'mask': Variable(from_numpy(afm_masks).half()),
-        'labels': Variable(from_numpy(labels).long())
+        'afm': Variable(from_numpy(afms)),
+        'bfm': Variable(from_numpy(bfms)),
+        'adj': Variable(from_numpy(adjs)),
+        # 't_dist': Variable(from_numpy(t_dists)),
+        'mask': Variable(from_numpy(afm_masks)),
+        'labels': Variable(from_numpy(labels))
         }
 
 

@@ -56,6 +56,12 @@ mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
+    for graph in data:
+        graph.afm = graph.afm.astype(np.float16)
+        graph.bfm = graph.bfm.astype(np.float16)
+        graph.adj = graph.adj.astype(np.float16)
+        graph.adj = graph.adj.astype(np.float16)
+        graph.label = long(graph.label)
     no_labels = int(file_data['no_labels'])
     all_labels = file_data['all_labels']
     file_data.close()
