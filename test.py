@@ -59,10 +59,10 @@ try:
     file_data = np.load(data_file+'.npz')
     data = file_data['data']
     for graph in data:
-        graph.mask = from_numpy(np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1))
-        graph.afm = from_numpy(graph.afm.astype(np.float32))
-        graph.bfm = from_numpy(graph.bfm.astype(np.float32))
-        graph.adj = from_numpy(graph.adj.astype(np.float32))
+        graph.mask = from_numpy(np.ones(graph.afm.shape[0], dtype=np.float16).reshape(graph.afm.shape[0], 1))
+        graph.afm = from_numpy(graph.afm.astype(np.float16))
+        graph.bfm = from_numpy(graph.bfm.astype(np.float16))
+        graph.adj = from_numpy(graph.adj.astype(np.float16))
         graph.label = long(graph.label)
     no_labels = int(file_data['no_labels'])
     all_labels = file_data['all_labels']
@@ -91,7 +91,7 @@ model = nn.Sequential(
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
-model.float()  # convert to half precision
+model.half()  # convert to half precision
 # for layer in model.modules():
 #     if isinstance(layer, nn.BatchNorm1d):
 #         layer.float()
