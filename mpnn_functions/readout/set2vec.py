@@ -118,7 +118,7 @@ class Set2Vec(nn.Module):
 
         if mask is not None:
             # mask = mask.half()
-            mask = ((1 - mask.float()) * _BIG_NEGATIVE).half()
+            mask = (1 - mask) * _BIG_NEGATIVE
 
         for i in range(self.steps):
             # m shape: [batch_size, node_dim]
