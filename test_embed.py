@@ -20,6 +20,32 @@ from pre_process.load_dataset import load_classification_dataset
 import tqdm
 
 
+class BondEncoder(nn.Module):
+    def __init__(self):
+        super(BondEncoder, self).__init__()
+        self.encoder = torch.nn.Embedding(8, 2, max_norm=1)
+        self.decoder = nn.Sequential(
+            nn.BatchNorm1d(2),
+            nn.Linear(2, 8)
+        )
+
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
+
+
+class AtomEncoder(nn.Module):
+    def __init__(self):
+        super(AtomEncoder, self).__init__()
+        self.encoder = torch.nn.Embedding(58, 4, max_norm=1)
+        self.decoder = nn.Sequential(
+            nn.BatchNorm1d(4),
+            nn.Linear(4, 58)
+        )
+
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
+
+
 def count_model_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     return sum([np.prod(p.size()) for p in model_parameters])
@@ -48,6 +74,35 @@ def test_model(model, dataset):
         metrics.recall_score(true_labels, labels, average='weighted')
     )
 
+
+def embed_afm(afm):
+    all_atoms = [atom.reshape(-1) for atom in np.vsplit(afm, afm.shape[0])]
+    all_atoms = [atom_dict[''.join(map(str, entry))] for entry in all_atoms]
+    all_atoms = map(long, all_atoms)
+    return atom_embed(torch.as_tensor(all_atoms)).data.numpy().astype(np.float32)
+
+
+def embed_bfm(bfm):
+    all_bonds = np.vsplit(bfm.reshape(-1, 8), bfm.shape[0] ** 2)
+    all_bonds = [bond_dict[''.join(map(str, entry.reshape(-1)))] for entry in all_bonds]
+    all_bonds = map(long, all_bonds)
+    return bond_embed(torch.as_tensor(all_bonds)).data.numpy().astype(np.float32)
+
+
+with open('./atom_dict.pickle') as f:
+    atom_dict = pickle.load(f)
+
+with open('./bond_dict.pickle') as f:
+    bond_dict = pickle.load(f)
+
+atom_embed = nn.Embedding(58, 4, max_norm=1)
+atom_embed.load_state_dict(torch.load('./atom_embed.state_dict', map_location=lambda storage, loc: storage))
+atom_embed.cpu().eval()
+bond_embed = nn.Embedding(8, 2, max_norm=1)
+bond_embed.load_state_dict(torch.load('./bond_embed.state_dict', map_location=lambda storage, loc: storage))
+bond_embed.cpu().eval()
+
+
 seed = 317
 torch.manual_seed(seed)
 data_file = sys.argv[1]
@@ -58,9 +113,10 @@ try:
     data = file_data['data']
     for graph in data:
         graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
-        graph.afm = graph.afm.astype(np.float32)
-        graph.bfm = graph.bfm.astype(np.float32)
+        graph.afm = embed_afm(graph.afm)
         graph.adj = graph.adj.astype(np.float32)
+        graph.bfm = embed_bfm(graph.bfm)
+        graph.bfm = np.multiply(graph.bfm, graph.adj.reshape(-1, 1)).reshape(graph.adj.shape + (-1,)).astype(np.float32)
         graph.label = long(graph.label)
     no_labels = int(file_data['no_labels'])
     all_labels = file_data['all_labels']
