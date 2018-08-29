@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.normed_basic_model import BasicModel
+from models.att_model import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
@@ -85,7 +85,7 @@ model_attributes = {
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
-    # nn.BatchNorm1d(model_attributes['out']),
+    nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
