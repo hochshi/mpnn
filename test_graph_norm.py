@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.att_model import BasicModel
+from models.normed_basic_model import BasicModel
 from models.graph_model_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
