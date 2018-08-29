@@ -47,11 +47,12 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
+        node_state = afm
         for i in range(self.iters):
             # messages = self.mfs[i](afm, bfm)
             # agg_messages = self.mas[i](messages, adj)
             # afm = self.ufs[i](agg_messages, afm, mask)
             # in one line:
             # afm = self.ufs[i](self.mas[i](self.mfs[i](afm, bfm), adj), afm, mask)
-            node_state = self.uf(self.ma(self.mf(afm, bfm, reuse_graph_tensors=(i>0)), adj), afm, mask)
+            node_state = self.uf(self.ma(self.mf(afm, bfm, reuse_graph_tensors=(i>0)), adj), node_state, mask)
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
