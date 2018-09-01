@@ -29,7 +29,7 @@ def count_model_params(model):
 
 def save_model(model, model_name, model_att, model_metrics):
     # type: (nn.Module, dict) -> None
-    torch.save(model.state_dict(), 'basic_model' + str(model_name) + '.state_dict')
+    torch.save(model.state_dict(), 'basic_model_' + str(model_name) + '.state_dict')
     with open('basic_model_attributes.pickle', 'wb') as out_file:
         pickle.dump(model_att, out_file)
     with open('basic_model_' + str(model_name) + '_stats.pickle', 'wb') as out_file:
@@ -148,8 +148,8 @@ for epoch in tqdm.trange(500):
     tqdm.tqdm.write(
         "epoch {} training loss: {}, validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
                                                                                           pre, rec, f1))
-    if not np.isnan(f1) and f1 > 0.78:
-        save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
+    if not np.isnan(f1) and f1 > 0.8:
+        save_model(model, str(selected_label)+'_epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
     # epoch_losses.append(epoch_loss)
     # if 0 == (epoch+1) % 50:
     #     print "epoch: {}, loss: {}".format(epoch, epoch_loss)
