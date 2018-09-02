@@ -85,9 +85,9 @@ model_attributes = {
 }
 
 ae = AtomAutoEncoder()
-ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 be = BondAutoEncoder()
-be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
@@ -101,6 +101,9 @@ model.float()  # convert to half precision
 # for layer in model.modules():
 #     if isinstance(layer, nn.BatchNorm1d):
 #         layer.float()
+model.apply(BasicModel.init_weights)
+ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
@@ -120,9 +123,9 @@ del train_labels
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 128, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 128, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
 
 losses = []
 epoch_losses = []
