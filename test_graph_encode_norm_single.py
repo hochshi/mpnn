@@ -85,9 +85,9 @@ model_attributes = {
 }
 
 ae = AtomAutoEncoder()
-ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 be = BondAutoEncoder()
-be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
@@ -103,10 +103,13 @@ for graph in data:
 
 all_labels = (selected_label == all_labels)
 
-model.float()  # convert to half precision
-# for layer in model.modules():
-#     if isinstance(layer, nn.BatchNorm1d):
-#         layer.float()
+model.float()
+model.apply(BasicModel.init_weights)
+ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# model[0].graph_model.ae = ae.encoder
+# model[0].graph_model.be = be.encoder
+
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
@@ -131,7 +134,7 @@ test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 # criterion = nn.CrossEntropyLoss(weight=weight)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-model.apply(BasicModel.init_weights)
+
 model.train()
 
 losses = []
