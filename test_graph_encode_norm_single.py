@@ -126,9 +126,10 @@ train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
-weight = float(sum(t_labels)) / len(t_labels)
-weight = [weight, 1-weight]
-criterion = nn.CrossEntropyLoss(weight=weight)
+# weight = float(sum(t_labels)) / len(t_labels)
+# weight = torch.Tensor([weight, 1-weight])
+# criterion = nn.CrossEntropyLoss(weight=weight)
+criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 model.apply(BasicModel.init_weights)
 model.train()
