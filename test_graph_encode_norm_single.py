@@ -112,17 +112,12 @@ print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
     model.cuda()
 
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-model.apply(BasicModel.init_weights)
-model.train()
-
 train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,
                                                           random_state=seed, stratify=all_labels)
 del data
 del all_labels
 del test_labels
-train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=train_labels)
+train, val, t_labels, v_labels = train_test_split(train, train_labels, test_size=0.1, random_state=seed, stratify=train_labels)
 del train_labels
 train = GraphDataSet(train)
 val = GraphDataSet(val)
@@ -130,6 +125,13 @@ test = GraphDataSet(test)
 train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
 val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
+
+weight = float(sum(t_labels)) / len(t_labels)
+weight = [weight, 1-weight]
+criterion = nn.CrossEntropyLoss(weight=weight)
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+model.apply(BasicModel.init_weights)
+model.train()
 
 losses = []
 epoch_losses = []
