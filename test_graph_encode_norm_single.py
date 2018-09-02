@@ -113,7 +113,8 @@ if torch.cuda.is_available():
     model.cuda()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+model.apply(BasicModel.init_weights)
 model.train()
 
 train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,

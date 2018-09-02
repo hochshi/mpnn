@@ -62,3 +62,16 @@ class BasicModel(nn.Module):
         for mf in self.mfs:
             node_state = self.bn(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask), mask)
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
+
+    @staticmethod
+    def init_weights(m):
+        module_type = type(m)
+        if module_type == nn.Linear:
+            torch.nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0.0)
+        elif module_type == nn.GRUCell:
+            torch.nn.init.xavier_uniform_(m.weight_ih, gain=torch.nn.init.calculate_gain('sigmoid'))
+            torch.nn.init.xavier_uniform_(m.weight_hh, gain=torch.nn.init.calculate_gain('sigmoid'))
+            nn.init.constant_(m.bias_ih, 0.0)
+            nn.init.constant_(m.bias_hh, 0.0)
