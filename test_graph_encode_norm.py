@@ -22,6 +22,12 @@ from mpnn_functions.encoders.atom_autoencoder import AtomAutoEncoder
 import tqdm
 
 
+def filter_dataset(data, labels, size_cutoff):
+    uniq, count = np.unique(labels, return_counts=True)
+    mask = np.isin(labels, uniq[count > size_cutoff])
+    filtered_dataset = [graph for graph, cond in zip(data, mask) if cond]
+    return filtered_dataset, labels[mask], sum(count > size_cutoff)
+
 def count_model_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     return sum([np.prod(p.size()) for p in model_parameters])
@@ -75,6 +81,8 @@ except IOError:
         pickle.dump(graph_encoder, out)
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
+data, all_labels, no_labels = filter_dataset(data, all_labels, 99)
+
 model_attributes = {
     'afm': 8,
     'bfm': 2,
@@ -127,19 +135,19 @@ train = DataLoader(train, 128, shuffle=True, collate_fn=collate_2d_graphs)
 val = DataLoader(val, 128, shuffle=True, collate_fn=collate_2d_graphs)
 test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
 
-losses = []
+
 epoch_losses = []
 break_con = False
-for epoch in tqdm.trange(500):
+for epoch in tqdm.trange(1000):
     model.train()
     epoch_loss = 0
     for batch in tqdm.tqdm(train):
         model.zero_grad()
         loss = criterion(model(batch), batch['labels'])
-        losses.append(loss.item())
         epoch_loss += loss.item()
         loss.backward()
         optimizer.step()
+    epoch_losses.append(epoch_loss)
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
     tqdm.tqdm.write(
@@ -147,28 +155,8 @@ for epoch in tqdm.trange(500):
                                                                                           pre, rec, f1))
     if not np.isnan(f1) and f1 > 0.78:
         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
-    # epoch_losses.append(epoch_loss)
-    # if 0 == (epoch+1) % 50:
-    #     print "epoch: {}, loss: {}".format(epoch, epoch_loss)
-    # break_con = loss.item() < 0.02
-    # if break_con:
-    #     break
 
 acc, pre, rec = test_model(model, test)
 f1 = 2 * (pre * rec) / (pre + rec)
 tqdm.tqdm.write(
-    "Testing acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc, pre, rec, f1))
-# save_model(model, model_attributes)
-
-# model.eval()
-# labels = []
-# true_labels = []
-# for batch in val:
-#     labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
-#     true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
-#
-# print "accuracy: {}, precision: {}, recall: {}".format(
-#     metrics.accuracy_score(true_labels, labels),
-#     metrics.precision_score(true_labels, labels, average='micro'),
-#     metrics.recall_score(true_labels, labels, average='micro')
-# )
+    "Testing acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
