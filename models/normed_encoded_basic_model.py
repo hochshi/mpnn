@@ -35,7 +35,7 @@ class BasicModel(nn.Module):
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
 
-        self.bn = MaskBatchNorm()
+        # self.bn = MaskBatchNorm()
 
         self.ae = atom_encoder
         self.be = bond_encoder
@@ -56,11 +56,11 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
-        afm = self.bn(self.ae(afm), mask)
-        bfm = self.bn(self.be(bfm), adj)
+        # afm = self.bn(self.ae(afm), mask)
+        # bfm = self.bn(self.be(bfm), adj)
         node_state = afm
         for mf in self.mfs:
-            node_state = self.bn(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask), mask)
+            node_state = self.uf(self.ma(mf(afm, bfm), adj), node_state, mask)
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
 
     @staticmethod

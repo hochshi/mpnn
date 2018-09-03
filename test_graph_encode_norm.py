@@ -109,7 +109,7 @@ model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'], atom_encoder=ae.encoder,
                             bond_encoder=be.encoder)),
-    nn.BatchNorm1d(model_attributes['out']),
+    # nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
@@ -126,7 +126,7 @@ if torch.cuda.is_available():
     model.cuda()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
 model.train()
 
 train, test, train_labels, test_labels = train_test_split(data, all_labels, test_size=0.1,
@@ -146,7 +146,7 @@ test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
 
 epoch_losses = []
 break_con = False
-for epoch in tqdm.trange(1000):
+for epoch in tqdm.trange(2000):
     model.train()
     epoch_loss = 0
     for batch in tqdm.tqdm(train):
