@@ -25,8 +25,16 @@ import tqdm
 def filter_dataset(data, labels, size_cutoff):
     uniq, count = np.unique(labels, return_counts=True)
     mask = np.isin(labels, uniq[count > size_cutoff])
-    filtered_dataset = [graph for graph, cond in zip(data, mask) if cond]
-    return filtered_dataset, labels[mask], sum(count > size_cutoff)
+    new_label_dict = dict(zip(uniq[count > size_cutoff], range(len(uniq[count > size_cutoff]))))
+    filtered_dataset = []
+    new_labels = []
+    for graph, cond, label in zip(data, mask, all_labels):
+        if cond:
+            new_label = new_label_dict[label]
+            new_labels.append(new_label)
+            graph.label = new_label
+            filtered_dataset.append(graph)
+    return filtered_dataset, new_labels, sum(count > size_cutoff)
 
 def count_model_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
