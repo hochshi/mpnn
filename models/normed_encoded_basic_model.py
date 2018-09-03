@@ -56,8 +56,8 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
-        # afm = self.bn(self.ae(afm), mask)
-        # bfm = self.bn(self.be(bfm), adj)
+        afm = self.ae(afm)
+        bfm = self.be(bfm)
         node_state = afm
         for mf in self.mfs:
             node_state = self.uf(self.ma(mf(afm, bfm), adj), node_state, mask)
