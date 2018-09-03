@@ -140,8 +140,8 @@ train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
 train = DataLoader(train, 128, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 128, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 128, shuffle=False, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 128, shuffle=False, collate_fn=collate_2d_graphs)
 
 
 epoch_losses = []
