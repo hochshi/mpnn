@@ -21,7 +21,7 @@ class MaskBatchNorm1d(nn.BatchNorm1d):
         mask = mask.view(-1).unsqueeze(-1)
         orig_shape = tensor.shape
         y = tensor.view(-1, tensor.shape[-1])
-        mean = y.sum(dim=0) / mask.sum()
+        mean = (y*mask).sum(dim=0) / mask.sum()
         var = ((y - mean) * mask).pow(2).sum(dim=0) / mask.sum()
         if not self.training and self.track_running_stats:
             y = y - self.running_mean
@@ -35,4 +35,4 @@ class MaskBatchNorm1d(nn.BatchNorm1d):
             y = y / (var.sqrt() + self.eps)
         if self.affine:
             y = self.weight * y + self.bias
-        return y.view(orig_shape)
+        return (y*mask).view(orig_shape)
