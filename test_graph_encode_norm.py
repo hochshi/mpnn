@@ -93,7 +93,7 @@ data, all_labels, no_labels = filter_dataset(data, all_labels, 99)
 
 model_attributes = {
     'afm': 8,
-    'bfm': 2,
+    'bfm': 4,
     'mfm': 2*8,
     'adj': data[0].adj.shape[-1],
     'out': 4*8,
@@ -119,7 +119,7 @@ model.float()  # convert to half precision
 #         layer.float()
 model.apply(BasicModel.init_weights)
 ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
-be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+# be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
