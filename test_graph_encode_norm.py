@@ -109,7 +109,7 @@ model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'], atom_encoder=ae.encoder,
                             bond_encoder=be.encoder)),
-    # nn.BatchNorm1d(model_attributes['out']),
+    nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )
 
@@ -146,7 +146,7 @@ test = DataLoader(test, 128, shuffle=False, collate_fn=collate_2d_graphs)
 
 epoch_losses = []
 break_con = False
-for epoch in tqdm.trange(2000):
+for epoch in tqdm.trange(1000):
     model.train()
     epoch_loss = 0
     for batch in tqdm.tqdm(train):
