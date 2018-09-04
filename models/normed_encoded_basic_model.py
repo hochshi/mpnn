@@ -39,8 +39,8 @@ class BasicModel(nn.Module):
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
 
-        self.aebn = nn.ReLU()  # MaskBatchNorm1d(node_features)
-        self.bebn = nn.ReLU()  # MaskBatchNorm1d(edge_features)
+        self.aebn = MaskBatchNorm1d(node_features)
+        self.bebn = MaskBatchNorm1d(edge_features)
 
         self.ae = atom_encoder
         self.be = bond_encoder
@@ -61,8 +61,8 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
-        afm = self.aebn(self.ae(afm))
-        bfm = self.bebn(self.be(bfm))
+        afm = self.aebn(self.ae(afm), mask)
+        bfm = self.bebn(self.be(bfm), adj)
         node_state = afm
         for mf, bn in zip(self.mfs, self.bns):
             node_state = bn(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask), mask)

@@ -1,4 +1,5 @@
 from torch import nn
+import torch
 
 _BIG_NEGATIVE = -1e8
 
@@ -16,13 +17,13 @@ class GraphLevelOutput(nn.Module):
         self.dropout = dropout
 
         i = nn.Sequential(
-            nn.Linear(2*self.in_dim, 1),
-            self.act_fn
+            nn.Linear(2*self.in_dim, self.out_dim)
+            # self.act_fn
         )
 
         j = nn.Sequential(
-            nn.Linear(2*self.in_dim, self.out_dim),
-            self.act_fn
+            nn.Linear(2*self.in_dim, self.out_dim)
+            # self.act_fn
         )
 
         self.i = i
@@ -31,10 +32,13 @@ class GraphLevelOutput(nn.Module):
     def forward(self, input_set, mask=None, mprev=None, cprev=None):
         # input_set, input_set_0 shape: batch x nodes x 2*node features
         # gated_activations shape: batch x nodes x output dim
-        if mask is None:
-            gated_activations = self.attn_act(self.i(input_set)).mul(self.j(input_set))
-        else:
-            # att_mask = mask.half()
-            att_mask = (1 - mask) * _BIG_NEGATIVE
-            gated_activations = self.attn_act(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
+        gated_activations = torch.sigmoid(self.i(input_set)) * self.j(input_set)
+        if mask is not None:
+            gated_activations = gated_activations * mask
+        # if mask is None:
+        #     gated_activations = self.attn_act(self.i(input_set)).mul(self.j(input_set))
+        # else:
+            att_mask = mask.half()
+            # att_mask = (1 - mask) * _BIG_NEGATIVE
+            # gated_activations = self.attn_act(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
         return gated_activations.sum(dim=1)
