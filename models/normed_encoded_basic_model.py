@@ -39,11 +39,11 @@ class BasicModel(nn.Module):
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
 
-        self.aebn = MaskBatchNorm1d(node_features)
-        self.bebn = MaskBatchNorm1d(edge_features)
+        self.aebn = nn.ReLU()  # MaskBatchNorm1d(node_features)
+        self.bebn = nn.ReLU()  # MaskBatchNorm1d(edge_features)
 
         self.ae = atom_encoder
-        self.be = nn.Linear(8, edge_features, bias=True)
+        self.be = bond_encoder
 
     def forward(self, afm, bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> object

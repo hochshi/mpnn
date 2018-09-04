@@ -93,7 +93,7 @@ data, all_labels, no_labels = filter_dataset(data, all_labels, 99)
 
 model_attributes = {
     'afm': 8,
-    'bfm': 4,
+    'bfm': 2,
     'mfm': 2*8,
     'adj': data[0].adj.shape[-1],
     'out': 4*8,
@@ -119,7 +119,7 @@ model.float()  # convert to half precision
 #         layer.float()
 model.apply(BasicModel.init_weights)
 ae.load_state_dict(torch.load('./atom_autoencoder.state_dict', map_location=lambda storage, loc: storage))
-# be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
+be.load_state_dict(torch.load('./bond_autoencoder.state_dict', map_location=lambda storage, loc: storage))
 
 print "Model has: {} parameters".format(count_model_params(model))
 if torch.cuda.is_available():
@@ -156,12 +156,17 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
+    acc, pre, rec = test_model(model, train)
+    f1 = 2 * (pre * rec) / (pre + rec)
+    tqdm.tqdm.write(
+        "epoch {} training loss: {}, acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
+                                                                                          pre, rec, f1))
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
     tqdm.tqdm.write(
-        "epoch {} training loss: {}, validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
-                                                                                          pre, rec, f1))
-    if not np.isnan(f1) and f1 > 0.78:
+        "epoch {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, acc,
+                                                                               pre, rec, f1))
+    if not np.isnan(f1) and f1 > 0.8:
         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
 acc, pre, rec = test_model(model, test)
