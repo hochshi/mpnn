@@ -65,7 +65,7 @@ class BasicModel(nn.Module):
         bfm = self.bebn(self.be(bfm), adj)
         node_state = afm
         for mf, bn in zip(self.mfs, self.bns):
-            node_state = F.relu(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask), mask)
+            node_state = F.relu(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask))
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
 
     @staticmethod
