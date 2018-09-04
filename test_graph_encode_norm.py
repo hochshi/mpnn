@@ -60,8 +60,8 @@ def test_model(model, dataset):
             true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
     return (
         metrics.accuracy_score(true_labels, labels),
-        metrics.precision_score(true_labels, labels, average='weighted'),
-        metrics.recall_score(true_labels, labels, average='weighted')
+        metrics.precision_score(true_labels, labels, average='micro'),
+        metrics.recall_score(true_labels, labels, average='micro')
     )
 
 seed = 317
