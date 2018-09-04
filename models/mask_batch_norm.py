@@ -24,8 +24,8 @@ class MaskBatchNorm1d(nn.BatchNorm1d):
         mean = y.sum(dim=0) / mask.sum()
         var = ((y - mean) * mask).pow(2).sum(dim=0) / mask.sum()
         if not self.training and self.track_running_stats:
-            y = y - self.running_mean.view(-1, 1)
-            y = y / (self.running_var.view(-1, 1) ** .5 + self.eps)
+            y = y - self.running_mean
+            y = y / (self.running_var ** .5 + self.eps)
         else:
             if self.track_running_stats:
                 with torch.no_grad():
