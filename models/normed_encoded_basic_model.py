@@ -10,7 +10,7 @@ class BasicModel(nn.Module):
                  message_func=EdgeNetwork, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=3,
-                 readout_func=GraphLevelOutput, readout_opts={}, atom_encoder=None, bond_encoder=None):
+                 readout_func=Set2Vec, readout_opts={}, atom_encoder=None, bond_encoder=None):
         super(BasicModel, self).__init__()
 
         message_opts['node_features'] = node_features
