@@ -5,6 +5,8 @@ from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from typing import List, Tuple
 from rdkit.Chem import AllChem
 from utils import choose_largest_fragment
+import rdkit
+from rdkit import Chem
 
 
 def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
@@ -81,5 +83,32 @@ def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_gr
         max_label = label if label > max_label else max_label
 
     return graphs, (max_label+1), encoded_labels
+
+
+def ecfp_bits(mol, nbits=16384):
+    # type: (Chem.Mol, int) -> np.core.multiarray
+    arr = np.zeros((mol.GetNumAtoms(), nbits), dtype=np.float32)
+    info = {}
+    AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=nbits, bitInfo=info)
+    for col, positions in info.iteritems():
+        for pos, _ in positions:
+            arr[pos, col] = 1
+    return arr
+
+
+def load_ecfp_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):
+    df = pd.read_csv(file_name)
+    m2gs = encode_molgraphs(
+                  generate_molgraphs(
+                      df[moltext_colname].values, df[label_colname].values, text2molfunc, mol_graph_factory
+                  )
+              )
+    for m2g in m2gs:
+        m2g.graph.label = ecfp_bits(m2g.mol)
+    return [m2g.graph for m2g in m2gs]
+
+
+
+
 
 __all__ = ['load_classification_dataset']

@@ -41,6 +41,7 @@ class BasicModel(nn.Module):
 
         self.aebn = MaskBatchNorm1d(node_features)
         self.bebn = MaskBatchNorm1d(edge_features)
+        self.obn = MaskBatchNorm1d(output_dim)
 
         self.ae = atom_encoder
         self.be = bond_encoder
@@ -66,7 +67,8 @@ class BasicModel(nn.Module):
         node_state = afm
         for mf, bn in zip(self.mfs, self.bns):
             node_state = bn(self.uf(self.ma(mf(afm, bfm), adj), node_state, mask), mask)
-        return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
+        output = self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
+        return self.obn(output, mask)
 
     @staticmethod
     def init_weights(m):

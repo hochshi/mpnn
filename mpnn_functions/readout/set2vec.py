@@ -66,12 +66,12 @@ class LSTMCellHidden(nn.Module):
             weight.data.uniform_(-stdv, stdv)
 
     def forward(self, hprev, cprev):
-        i = F.sigmoid(hprev.matmul(self.w_hi) + self.b_hi)
-        f = F.sigmoid(hprev.matmul(self.w_hf) + self.b_hf)
-        g = F.tanh(hprev.matmul(self.w_hg) + self.b_hg)
-        o = F.sigmoid(hprev.matmul(self.w_ho) + self.b_ho)
+        i = torch.sigmoid(hprev.matmul(self.w_hi) + self.b_hi)
+        f = torch.sigmoid(hprev.matmul(self.w_hf) + self.b_hf)
+        g = torch.tanh(hprev.matmul(self.w_hg) + self.b_hg)
+        o = torch.sigmoid(hprev.matmul(self.w_ho) + self.b_ho)
         cprime = f * cprev + i * g
-        hprime = o * F.tanh(cprime)
+        hprime = o * torch.tanh(cprime)
         return hprime, cprime
 
 
@@ -89,7 +89,6 @@ class Set2Vec(nn.Module):
         else:
             raise ValueError("Invalid inner_prod type: {}".format(inner_prod))
         self.add_module('lstmcell', LSTMCellHidden(self.nf*2, self.nf))
-        # self.lstmcell = LSTMCellHidden(self.nf*2, self.nf)
 
     def forward(self, input_set, mask=None, mprev=None, cprev=None):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, str) -> (torch.Tensor, torch.Tensor)
@@ -106,13 +105,14 @@ class Set2Vec(nn.Module):
         :type inner_prod:
         """
         batch_size = input_set.shape[0]
+        dtype = np.float64 if 'torch.DoubleTensor' == torch.typename(self.q_attn.weight) else np.float32
         if mprev is None:
-            mprev = from_numpy(np.zeros([batch_size, self.nf], dtype=np.float32))
+            mprev = from_numpy(np.zeros([batch_size, self.nf], dtype=dtype))
         # mprev shape: [batch_size, 2*node_dim]
-        mprev = torch.cat([mprev, from_numpy(np.zeros([batch_size, self.nf], dtype=np.float32))], dim=1)
+        mprev = torch.cat([mprev, from_numpy(np.zeros([batch_size, self.nf], dtype=dtype))], dim=1)
         if cprev is None:
             #cprev shape: [batch_size, node_dim]
-            cprev = from_numpy(np.zeros([batch_size, self.nf], dtype=np.float32))
+            cprev = from_numpy(np.zeros([batch_size, self.nf], dtype=dtype))
 
         logit_att = []
 
@@ -128,7 +128,7 @@ class Set2Vec(nn.Module):
             query = self.q_attn(m).unsqueeze(1)
             if self.ip:
                 # energies shape: [batch_size*num_nodes, 1]
-                energies = self.e_attn(F.tanh(query + input_set).view(-1, self.nf))
+                energies = self.e_attn(torch.tanh(query + input_set).view(-1, self.nf))
             else:
                 # energies shape: [batch_size*num_nodes, 1]
                 energies = input_set.matmul(query.view(-1, self.nf, 1)).view(batch_size, -1)

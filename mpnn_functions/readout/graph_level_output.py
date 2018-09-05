@@ -32,13 +32,16 @@ class GraphLevelOutput(nn.Module):
     def forward(self, input_set, mask=None, mprev=None, cprev=None):
         # input_set, input_set_0 shape: batch x nodes x 2*node features
         # gated_activations shape: batch x nodes x output dim
-        gated_activations = torch.sigmoid(self.i(input_set)) * self.j(input_set)
         if mask is not None:
-            gated_activations = gated_activations * mask
+            att_mask = (1 - mask) * _BIG_NEGATIVE
+            gated_activations = torch.sigmoid(self.i(input_set * mask) + att_mask) * self.j(input_set * mask) * mask
+        else:
+            gated_activations = torch.sigmoid(self.i(input_set)) * self.j(input_set)
         # if mask is None:
         #     gated_activations = self.attn_act(self.i(input_set)).mul(self.j(input_set))
         # else:
         #     att_mask = mask.half()
             # att_mask = (1 - mask) * _BIG_NEGATIVE
             # gated_activations = self.attn_act(self.i(input_set) + att_mask).mul(self.j(input_set)).mul(mask)
-        return gated_activations.sum(dim=1)
+        return gated_activations
+        # return gated_activations.sum(dim=1)
