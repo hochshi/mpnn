@@ -145,7 +145,7 @@ for epoch in tqdm.trange(1000):
             model.zero_grad()
             loss = criterion(torch.sigmoid(model(batch) * batch['mask']), batch['labels'])
             val_loss += loss.item()
-    tqdm.tqdm.write("Train loss: {}, Val loss: {}".format(epoch_loss, val_loss))
+    tqdm.tqdm.write("Train loss: {}, Val loss: {}".format(epoch_loss, val_loss)
 #     acc, pre, rec = test_model(model, train)
 #     f1 = 2 * (pre * rec) / (pre + rec)
 #     tqdm.tqdm.write(

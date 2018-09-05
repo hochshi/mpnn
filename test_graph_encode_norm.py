@@ -28,7 +28,7 @@ def filter_dataset(data, labels, size_cutoff):
     new_label_dict = dict(zip(uniq[count > size_cutoff], range(len(uniq[count > size_cutoff]))))
     filtered_dataset = []
     new_labels = []
-    for graph, cond, label in zip(data, mask, all_labels):
+    for graph, cond, label in zip(data, mask, labels):
         if cond:
             new_label = new_label_dict[label]
             new_labels.append(new_label)
