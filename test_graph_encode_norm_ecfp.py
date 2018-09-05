@@ -139,20 +139,27 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
-    acc, pre, rec = test_model(model, train)
-    f1 = 2 * (pre * rec) / (pre + rec)
-    tqdm.tqdm.write(
-        "epoch {} training loss: {}, acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
-                                                                                          pre, rec, f1))
-    acc, pre, rec = test_model(model, val)
-    f1 = 2 * (pre * rec) / (pre + rec)
-    tqdm.tqdm.write(
-        "epoch {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, acc,
-                                                                               pre, rec, f1))
-    if not np.isnan(f1) and f1 > 0.8:
-        save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
-
-acc, pre, rec = test_model(model, test)
-f1 = 2 * (pre * rec) / (pre + rec)
-tqdm.tqdm.write(
-    "Testing acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
+    val_loss = 0
+    with torch.no_grad():
+        for batch in tqdm.tqdm(val):
+            model.zero_grad()
+            loss = criterion(torch.sigmoid(model(batch) * batch['mask']), batch['labels'])
+            val_loss += loss.item()
+    tqdm.tqdm.write("Train loss: {}, Val loss: {}".format(epoch_loss, val_loss))
+#     acc, pre, rec = test_model(model, train)
+#     f1 = 2 * (pre * rec) / (pre + rec)
+#     tqdm.tqdm.write(
+#         "epoch {} training loss: {}, acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
+#                                                                                           pre, rec, f1))
+#     acc, pre, rec = test_model(model, val)
+#     f1 = 2 * (pre * rec) / (pre + rec)
+#     tqdm.tqdm.write(
+#         "epoch {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, acc,
+#                                                                                pre, rec, f1))
+#     if not np.isnan(f1) and f1 > 0.8:
+#         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
+#
+# acc, pre, rec = test_model(model, test)
+# f1 = 2 * (pre * rec) / (pre + rec)
+# tqdm.tqdm.write(
+#     "Testing acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
