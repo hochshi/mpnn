@@ -37,7 +37,7 @@ class BasicModel(nn.Module):
             self.bns.append(MaskBatchNorm1d(message_opts['node_features']))
             self.add_module('bn' + str(i), self.bns[-1])
             self.ma_bns.append(MaskBatchNorm1d(message_features))
-            self.add_module('ma_bn' + str(i), self.bns[-1])
+            self.add_module('ma_bn' + str(i), self.ma_bns[-1])
         self.ma = message_agg_func(**agg_opts)
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
