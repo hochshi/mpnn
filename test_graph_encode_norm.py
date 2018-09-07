@@ -89,14 +89,14 @@ except IOError:
         pickle.dump(graph_encoder, out)
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
-data, all_labels, no_labels = filter_dataset(data, all_labels, 99)
+data, all_labels, no_labels = filter_dataset(data, all_labels, 123)
 
 model_attributes = {
     'afm': 8,
     'bfm': 2,
-    'mfm': 2*8,
+    'mfm': 8,
     'adj': data[0].adj.shape[-1],
-    'out': 4*8,
+    'out': 2*8,
     'classification_output': no_labels
 }
 
@@ -164,7 +164,7 @@ for epoch in tqdm.trange(1000):
     acc, pre, rec = test_model(model, val)
     f1 = 2 * (pre * rec) / (pre + rec)
     tqdm.tqdm.write(
-        "epoch {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, acc,
+        "epoch {} loss: {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
                                                                                pre, rec, f1))
     if not np.isnan(f1) and f1 > 0.8:
         save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
