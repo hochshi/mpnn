@@ -22,19 +22,28 @@ from mpnn_functions.encoders.atom_autoencoder import AtomAutoEncoder
 import tqdm
 
 
-def filter_dataset(data, labels, size_cutoff):
+def filter_dataset(data, labels, lower_cutoff=None, upper_cutoff=None, count_cutoff=None):
     uniq, count = np.unique(labels, return_counts=True)
-    mask = np.isin(labels, uniq[count > size_cutoff])
-    new_label_dict = dict(zip(uniq[count > size_cutoff], range(len(uniq[count > size_cutoff]))))
+    if lower_cutoff is not None:
+        uniq_mask = count > lower_cutoff
+    if upper_cutoff is not None:
+        uniq_mask = np.logical_and(uniq_mask, count < upper_cutoff)
+    if count_cutoff is not None:
+        positive = np.argwhere(uniq_mask).reshape(-1)[:4]
+        uniq_mask = np.zeros_like(uniq, dtype=np.bool)
+        uniq_mask[positive] = True
+
+    label_mask = np.isin(labels, uniq[uniq_mask])
+    new_label_dict = dict(zip(uniq[uniq_mask], range(uniq_mask.sum())))
     filtered_dataset = []
     new_labels = []
-    for graph, cond, label in zip(data, mask, labels):
+    for graph, cond, label in zip(data, label_mask, labels):
         if cond:
             new_label = new_label_dict[label]
             new_labels.append(new_label)
             graph.label = new_label
             filtered_dataset.append(graph)
-    return filtered_dataset, new_labels, sum(count > size_cutoff)
+    return filtered_dataset, new_labels, uniq_mask.sum()
 
 def count_model_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
@@ -89,7 +98,7 @@ except IOError:
         pickle.dump(graph_encoder, out)
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
-data, all_labels, no_labels = filter_dataset(data, all_labels, 123)
+data, all_labels, no_labels = filter_dataset(data, all_labels, lower_cutoff=49, count_cutoff=4)
 
 model_attributes = {
     'afm': 8,
