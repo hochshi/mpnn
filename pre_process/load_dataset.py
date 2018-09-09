@@ -24,9 +24,25 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
         m2gs.append(m2g)
     return m2gs
 
+def generate_affinity_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory, affinities):
+    # type: (np.array, function, MolGraphFactory) -> List[MolGraph]
+    m2gs = []
+    for mol_str, label, affinity in zip(mol_strs, labels, affinities):
+        mol = text2molfunc(mol_str)
+        if mol is None:
+            continue
+        AllChem.SanitizeMol(mol)
+        # mol = choose_largest_fragment(mol)
+        m2g = mol_graph_factory.prep_graph(mol)
+        m2g.create_graph()
+        m2g.graph.label = label
+        m2g.graph.affinity = affinity
+        m2gs.append(m2g)
+    return m2gs
+
 
 def encode_molgraphs(m2gs):
-    # type: (List[MolGraph]) -> None
+    # type: (List[MolGraph]) -> List[MolGraph]
     graph_encoder = GraphEncoder()
     if graph_encoder.atom_enc is None:
         graph_encoder.atom_enc = build_atom_enc(m2gs)
@@ -107,6 +123,30 @@ def load_ecfp_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factor
         m2g.graph.label = ecfp_bits(m2g.mol)
     return [m2g.graph for m2g in m2gs]
 
+
+def load_affinity_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname,
+                          affinity_col):
+    df = pd.read_csv(file_name)
+    graphs = [m2g.graph for m2g in encode_molgraphs(
+        generate_affinity_molgraphs(
+            df[moltext_colname].values, df[label_colname].values, text2molfunc, mol_graph_factory,
+            df[affinity_col].values))]
+
+    labels = [graph.label for graph in graphs]
+    max_label = np.NINF
+
+    graph_encoder = GraphEncoder()
+    if graph_encoder.label_enc is None:
+        le = LabelEncoder()
+        encoded_labels = le.fit_transform(labels)
+        graph_encoder.label_enc = le
+    else:
+        encoded_labels = graph_encoder.label_enc.transform(labels)
+    for graph, label in zip(graphs, encoded_labels):
+        graph.label = label
+        max_label = label if label > max_label else max_label
+
+    return graphs, (max_label + 1), encoded_labels
 
 
 
