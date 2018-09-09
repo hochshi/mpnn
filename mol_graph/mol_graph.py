@@ -34,8 +34,8 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetHybridization,GetNumRadicalElectrons," \
-                       "GetTotalDegree,GetTotalValence".split(',')
+    DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetNeighbors,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
+                       "GetHybridization,GetNumRadicalElectrons,GetTotalDegree,GetTotalValence".split(',')
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
         self.features = features
