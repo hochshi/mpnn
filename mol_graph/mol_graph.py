@@ -34,8 +34,9 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
-                       "GetHybridization,GetNumRadicalElectrons,GetTotalDegree,GetTotalValence".split(',')
+    # DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
+    #                    "GetHybridization,GetNumRadicalElectrons,GetTotalDegree,GetTotalValence".split(',')
+    DEAFULT_FEATURES = "GetAtomicNum,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic".split(',')
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
         self.features = features
@@ -65,7 +66,7 @@ class BondFeatures:
     GetEndAtomIdx
     """
 
-    DEFAULT_FEATURES = ['GetBondTypeAsDouble', 'GetIsConjugated']
+    DEFAULT_FEATURES = ['GetBondTypeAsDouble', 'GetIsAromatic', 'GetIsConjugated', 'IsInRing']
 
     def __init__(self, features=DEFAULT_FEATURES, ret_pos=True):
         self.features = features
@@ -177,14 +178,15 @@ class MolGraph:
         self.graph.afm = afm
 
     def populate_bfm(self):
-        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2*(len(self.ae.features)+1)], dtype=np.int)
+        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2], dtype=np.str)
         self.ae.ret_pos = False
         for bond in self.mol.GetBonds():
             pos, features = self.be(bond)
+            features = map(str, features)
             pos = sorted(pos)
             for p in pos:
-                features += self.ae(self.mol.GetAtomWithIdx(p))
-            features = map(int, features)
+                # features += self.ae(self.mol.GetAtomWithIdx(p))
+                features += [''.join(map(str, map(int, self.ae(self.mol.GetAtomWithIdx(p)))))]
             bfm[tuple(pos)] = features
             bfm[tuple(reversed(pos))] = features
         self.graph.bfm = bfm

@@ -10,7 +10,7 @@ from rdkit import Chem
 
 
 def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
-    # type: (np.array, function, MolGraphFactory) -> List[MolGraph]
+    # type: (np.array, np.array, function, MolGraphFactory) -> List[MolGraph]
     m2gs = []
     for mol_str, label in zip(mol_strs, labels):
         mol = text2molfunc(mol_str)

@@ -88,9 +88,9 @@ except IOError:
         graph.adj = graph.adj.astype(np.float32)
         graph.label = float(graph.label)
     graph_encoder = GraphEncoder()
-    with open('basic_model_graph_encoder.pickle', 'wb') as out:
-        pickle.dump(graph_encoder, out)
-    np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
+    # with open('basic_model_graph_encoder.pickle', 'wb') as out:
+    #     pickle.dump(graph_encoder, out)
+    # np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 
 # ae = AutoEncoder(data[0].afm.shape[-1])
