@@ -169,6 +169,7 @@ class MolGraph:
         return self.graph
 
     def populate_afm(self):
+        self.ae.ret_pos = True
         afm = np.empty([self.mol.GetNumAtoms(), len(self.ae.features)])
         for atom in self.mol.GetAtoms():
             pos, features = self.ae(atom)
@@ -176,9 +177,13 @@ class MolGraph:
         self.graph.afm = afm
 
     def populate_bfm(self):
-        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features)])
+        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2*len(self.ae.features)])
+        self.ae.ret_pos = False
         for bond in self.mol.GetBonds():
             pos, features = self.be(bond)
+            pos = sorted(pos)
+            for p in pos:
+                features += self.ae(self.mol.GetAtomWithIdx(p))[0]
             bfm[tuple(pos)] = features
             bfm[tuple(reversed(pos))] = features
         self.graph.bfm = bfm
