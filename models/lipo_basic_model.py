@@ -31,13 +31,18 @@ class BasicModel(nn.Module):
         self.mfs = []
         self.bns = []
         self.ma_bns = []
+        self.ufs = []
         for i in range(message_steps):
+
             self.mfs.append(message_func(**message_opts))
             self.add_module('mf' + str(i), self.mfs[-1])
             self.bns.append(MaskBatchNorm1d(message_opts['node_features']))
             self.add_module('bn' + str(i), self.bns[-1])
             self.ma_bns.append(MaskBatchNorm1d(message_features))
             self.add_module('ma_bn' + str(i), self.ma_bns[-1])
+            self.ufs.append(update_func(**update_opts))
+            self.add_module('uf' + str(i), self.ufs[-1])
+
         self.ma = message_agg_func(**agg_opts)
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
@@ -67,8 +72,8 @@ class BasicModel(nn.Module):
         # afm = self.aebn(self.ae(afm), mask)
         # bfm = self.bebn(self.be(bfm), adj)
         node_state = afm
-        for mf, bn, ma_bn in zip(self.mfs, self.bns, self.ma_bns):
-            node_state = bn(self.uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
+        for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
+            node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
 
     @staticmethod
