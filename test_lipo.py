@@ -64,9 +64,9 @@ def test_model(model, dataset):
     true_labels = []
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            labels = labels + model(batch).squeeze().cpu().data.numpy().tolist()
-            true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
-    return metrics.mean_squared_error(true_labels, labels)
+            labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
+            true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
+    return np.sqrt(metrics.mean_squared_error(true_labels, labels))
 
 seed = 317
 torch.manual_seed(seed)
@@ -95,6 +95,16 @@ except IOError:
 
 # ae = AutoEncoder(data[0].afm.shape[-1])
 # be = AutoEncoder(data[0].bfm.shape[-1])
+
+den = data[0].afm.shape[-1]
+dense_layer = []
+while den > 10:
+    new_den = np.ceil(den/2)
+    dense_layer.append(nn.Linear(den, new_den))
+    dense_layer.append(nn.ReLU())
+    den = new_den
+dense_layer.append(nn.Linear(den, 1))
+
 model_attributes = {
     'afm': data[0].afm.shape[-1],
     'bfm': data[0].bfm.shape[-1],
@@ -109,7 +119,8 @@ model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    nn.Sequential(dense_layer)
 )
 
 model.float()
@@ -151,7 +162,7 @@ for epoch in tqdm.trange(1000):
     mse = test_model(model, train)
     tqdm.tqdm.write(
         "epoch {} training loss: {}, MSE: {}".format(epoch, epoch_loss, mse))
-    mse = test_model(model, train)
+    mse = test_model(model, val)
     tqdm.tqdm.write(
         "epoch {} loss: {} validation MSE: {}".format(epoch, epoch_loss, mse))
     # if not np.isnan(f1) and f1 > 0.8:
