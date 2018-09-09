@@ -93,11 +93,11 @@ except IOError:
     np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 
-ae = AutoEncoder(data[0].afm.shape[-1])
-be = AutoEncoder(data[0].bfm.shape[-1])
+# ae = AutoEncoder(data[0].afm.shape[-1])
+# be = AutoEncoder(data[0].bfm.shape[-1])
 model_attributes = {
-    'afm': ae.out_f,
-    'bfm': be.out_f,
+    'afm': data[0].afm.shape[-1],
+    'bfm': data[0].bfm.shape[-1],
     'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 2*data[0].afm.shape[-1],
@@ -107,8 +107,7 @@ model_attributes = {
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
-                            model_attributes['adj'], model_attributes['out'],
-                            atom_encoder=ae.encoder, bond_encoder=be.encoder)),
+                            model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Linear(model_attributes['out'], model_attributes['classification_output'])
 )

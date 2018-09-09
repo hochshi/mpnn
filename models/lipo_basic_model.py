@@ -42,11 +42,11 @@ class BasicModel(nn.Module):
         self.uf = update_func(**update_opts)
         self.of = readout_func(**readout_opts)
 
-        self.aebn = MaskBatchNorm1d(node_features)
-        self.bebn = MaskBatchNorm1d(edge_features)
+        # self.aebn = MaskBatchNorm1d(node_features)
+        # self.bebn = MaskBatchNorm1d(edge_features)
 
-        self.ae = atom_encoder
-        self.be = bond_encoder
+        # self.ae = atom_encoder
+        # self.be = bond_encoder
 
     def forward(self, afm, bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> object
@@ -64,8 +64,8 @@ class BasicModel(nn.Module):
         :type adj: torch.Tensor
         :param adj: the adjacency tensor
         """
-        afm = self.aebn(self.ae(afm), mask)
-        bfm = self.bebn(self.be(bfm), adj)
+        # afm = self.aebn(self.ae(afm), mask)
+        # bfm = self.bebn(self.be(bfm), adj)
         node_state = afm
         for mf, bn, ma_bn in zip(self.mfs, self.bns, self.ma_bns):
             node_state = bn(self.uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
