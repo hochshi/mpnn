@@ -34,7 +34,7 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetNeighbors,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
+    DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
                        "GetHybridization,GetNumRadicalElectrons,GetTotalDegree,GetTotalValence".split(',')
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
@@ -44,10 +44,10 @@ class AtomFeatures:
     def __call__(self, atom):
         # type: (Chem.Atom) -> object
 
-        features = ()
+        features = [getattr(atom, feature)() for feature in self.features]
+        features += [len(atom.GetNeighbors())]
         if self.ret_pos:
-            features += tuple([[atom.GetIdx()]])
-        features += tuple([[getattr(atom, feature)() for feature in self.features]])
+            return tuple([[atom.GetIdx()]]), features
         return features
 
 
@@ -170,20 +170,21 @@ class MolGraph:
 
     def populate_afm(self):
         self.ae.ret_pos = True
-        afm = np.empty([self.mol.GetNumAtoms(), len(self.ae.features)])
+        afm = np.empty([self.mol.GetNumAtoms(), len(self.ae.features)+1], dtype=np.int)
         for atom in self.mol.GetAtoms():
             pos, features = self.ae(atom)
-            afm[pos] = features
+            afm[pos] = map(int, features)
         self.graph.afm = afm
 
     def populate_bfm(self):
-        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2*len(self.ae.features)])
+        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2*(len(self.ae.features)+1)], dtype=np.int)
         self.ae.ret_pos = False
         for bond in self.mol.GetBonds():
             pos, features = self.be(bond)
             pos = sorted(pos)
             for p in pos:
-                features += self.ae(self.mol.GetAtomWithIdx(p))[0]
+                features += self.ae(self.mol.GetAtomWithIdx(p))
+            features = map(int, features)
             bfm[tuple(pos)] = features
             bfm[tuple(reversed(pos))] = features
         self.graph.bfm = bfm
