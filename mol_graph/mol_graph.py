@@ -106,9 +106,19 @@ class Graph:
 
     def encode_bfm(self, bond_enc):
         # type: (BondEncoder) -> None
-        self.bfm = np.concatenate(
-            [bond_enc[i].transform(self.bfm.reshape(-1, self.bfm.shape[-1])[:,i]) for i in range(self.bfm.shape[-1])],
-            axis=-1).reshape(self.bfm.shape[0:-1] + (-1,))
+        bf_no = self.bfm.shape[-1]
+        self.bfm = self.bfm.reshape(-1, bf_no)
+        mask = 1 == self.adj.reshape(-1)
+
+        bfm = []
+        for i, be in enumerate(bond_enc):
+            t_bfm = np.zeros((self.bfm.shape[0], len(be.classes_)))
+            t_bfm[mask, :] = be.transform(self.bfm[mask, i])
+            bfm.append(t_bfm)
+        self.bfm = np.concatenate(bfm, axis=-1).reshape(self.adj.shape + (-1,))
+        # self.bfm = np.concatenate(
+        #     [bond_enc[i].transform(self.bfm.reshape(-1, self.bfm.shape[-1])[:,i]) for i in range(self.bfm.shape[-1])],
+        #     axis=-1).reshape(self.bfm.shape[0:-1] + (-1,))
 
     def encode(self, atom_enc, bond_enc):
         if not self.is_encoded:
@@ -178,17 +188,22 @@ class MolGraph:
         self.graph.afm = afm
 
     def populate_bfm(self):
-        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2], dtype=np.str)
+        bfm = np.empty([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features) + 2], dtype=np.object)
         self.ae.ret_pos = False
         for bond in self.mol.GetBonds():
             pos, features = self.be(bond)
             features = map(str, features)
             pos = sorted(pos)
-            for p in pos:
-                # features += self.ae(self.mol.GetAtomWithIdx(p))
-                features += [''.join(map(str, map(int, self.ae(self.mol.GetAtomWithIdx(p)))))]
-            bfm[tuple(pos)] = features
-            bfm[tuple(reversed(pos))] = features
+            # for p in pos:
+            #     # features += self.ae(self.mol.GetAtomWithIdx(p))
+            #     features += [''.join(map(str, map(int, self.ae(self.mol.GetAtomWithIdx(p)))))]
+            # bfm[tuple(pos)] = features
+            # bfm[tuple(reversed(pos))] = features
+            atoms = [''.join(map(str, map(int, self.ae(self.mol.GetAtomWithIdx(p))))) for p in pos]
+            # bfm[tuple(pos)] = features + ['_'.join(atoms)]
+            # bfm[tuple(reversed(pos))] = features + ['_'.join(reversed(atoms))]
+            bfm[tuple(pos)] = features + atoms
+            bfm[tuple(reversed(pos))] = features + list(reversed(atoms))
         self.graph.bfm = bfm
 
     def populate_adj(self):

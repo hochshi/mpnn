@@ -67,10 +67,11 @@ def build_atom_enc(m2gs):
 def build_bond_enc(m2gs):
     bond_features = m2gs[0].graph.bfm.shape[-1]
     all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, bond_features) for m2g in m2gs])
+    mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
     bond_encs = []
     for i in range(all_bfms.shape[1]):
         bond_enc = LabelBinarizer()
-        bond_enc.fit(all_bfms[:, i])
+        bond_enc.fit(all_bfms[mask, i])
         bond_encs.append(bond_enc)
     return bond_encs
 
