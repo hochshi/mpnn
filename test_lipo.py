@@ -64,13 +64,9 @@ def test_model(model, dataset):
     true_labels = []
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
+            labels = labels + model(batch).squeeze().cpu().data.numpy().tolist()
             true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
-    return (
-        metrics.accuracy_score(true_labels, labels),
-        metrics.precision_score(true_labels, labels, average='micro'),
-        metrics.recall_score(true_labels, labels, average='micro')
-    )
+    return metrics.mean_squared_error(true_labels, labels)
 
 seed = 317
 torch.manual_seed(seed)
@@ -153,16 +149,12 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
-    acc, pre, rec = test_model(model, train)
-    f1 = 2 * (pre * rec) / (pre + rec)
+    mse = test_model(model, train)
     tqdm.tqdm.write(
-        "epoch {} training loss: {}, acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
-                                                                                          pre, rec, f1))
-    acc, pre, rec = test_model(model, val)
-    f1 = 2 * (pre * rec) / (pre + rec)
+        "epoch {} training loss: {}, MSE: {}".format(epoch, epoch_loss, mse))
+    mse = test_model(model, train)
     tqdm.tqdm.write(
-        "epoch {} loss: {} validation acc: {}, pre: {}, rec: {}, F1: {}".format(epoch, epoch_loss, acc,
-                                                                               pre, rec, f1))
+        "epoch {} loss: {} validation MSE: {}".format(epoch, epoch_loss, mse))
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
