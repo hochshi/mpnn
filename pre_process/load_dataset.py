@@ -149,6 +149,15 @@ def load_affinity_dataset(file_name, moltext_colname, text2molfunc, mol_graph_fa
     return graphs, (max_label + 1), encoded_labels
 
 
+def load_number_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):
+    df = pd.read_csv(file_name)
+    graphs = [m2g.graph for m2g in encode_molgraphs(
+        generate_molgraphs(
+            df[moltext_colname].values, df[label_colname].values, text2molfunc, mol_graph_factory,
+            ))]
+
+    return graphs, None, None
+
 
 
 __all__ = ['load_classification_dataset']
