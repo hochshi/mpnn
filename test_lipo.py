@@ -12,7 +12,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from models.lipo_basic_model import BasicModel
-from models.graph_model_wrapper import GraphWrapper
+from models.graph_norm_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
 from pre_process.data_loader import GraphDataSet, collate_2d_graphs, collate_2d_tensors
@@ -84,6 +84,7 @@ except IOError:
     for graph in data:
         graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
         graph.afm = graph.afm.astype(np.float32)
+        graph.nafm = graph.nafm.astype(np.float32)
         graph.bfm = graph.bfm.astype(np.float32)
         graph.adj = graph.adj.astype(np.float32)
         graph.label = float(graph.label)
@@ -106,7 +107,7 @@ while den > 10:
 dense_layer.append(nn.Linear(den, 1))
 
 model_attributes = {
-    'afm': data[0].afm.shape[-1],
+    'afm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
     'bfm': data[0].bfm.shape[-1],
     'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
@@ -117,7 +118,7 @@ model_attributes = {
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
-                            model_attributes['adj'], model_attributes['out'])),
+                            model_attributes['adj'], model_attributes['out']), data[0].nafm.shape[-1]),
     nn.BatchNorm1d(model_attributes['out']),
     # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
     nn.Sequential(*dense_layer)

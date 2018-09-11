@@ -15,7 +15,7 @@ class GRUUpdate(nn.Module):
         super(GRUUpdate, self).__init__()
         self.nf = node_features
         self.mf = message_features
-        self.gru_cell = nn.GRUCell(self.mf, self.nf)
+        self.gru_cell = nn.GRUCell(self.mf, self.nf, bias=False)
 
     def forward(self, messages, node_states, mask):
         """

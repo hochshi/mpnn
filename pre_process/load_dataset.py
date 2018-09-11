@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from mol_graph import MolGraphFactory, MolGraph, Graph, GraphEncoder
-from sklearn.preprocessing import LabelBinarizer, LabelEncoder
+from mol_graph import MolGraphFactory, MolGraph, Graph, GraphEncoder, AtomFeatures, BondFeatures
+from sklearn.preprocessing import LabelBinarizer, LabelEncoder, MinMaxScaler
 from typing import List, Tuple
 from rdkit.Chem import AllChem
 from utils import choose_largest_fragment
@@ -45,23 +45,30 @@ def encode_molgraphs(m2gs):
     # type: (List[MolGraph]) -> List[MolGraph]
     graph_encoder = GraphEncoder()
     if graph_encoder.atom_enc is None:
-        graph_encoder.atom_enc = build_atom_enc(m2gs)
+        atom_enc, atom_scaler = build_atom_enc(m2gs)
+        graph_encoder.atom_enc = atom_enc
+        graph_encoder.atom_scaler = atom_scaler
     if graph_encoder.bond_enc is None:
         graph_encoder.bond_enc = build_bond_enc(m2gs)
 
     for m2g in m2gs:
-        m2g.graph.encode(graph_encoder.atom_enc, graph_encoder.bond_enc)
+        m2g.graph.encode(graph_encoder)
     return m2gs
 
 
 def build_atom_enc(m2gs):
     all_afms = np.vstack([m2g.graph.afm for m2g in m2gs])
     atom_encs = []
-    for i in range(all_afms.shape[1]):
+    for i in AtomFeatures.HOT_FEATURES:
         atom_enc = LabelBinarizer()
         atom_enc.fit(all_afms[:, i])
-        atom_encs.append(atom_enc)
-    return atom_encs
+        atom_encs.append((i, atom_enc))
+    atom_encs.append((AtomFeatures.BOOL_FEATURES, None))
+
+    all_nafms = np.vstack([m2g.graph.nafm for m2g in m2gs])
+    scaler = MinMaxScaler()
+    scaler.fit(all_nafms)
+    return atom_encs, scaler
 
 
 def build_bond_enc(m2gs):
@@ -69,10 +76,11 @@ def build_bond_enc(m2gs):
     all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, bond_features) for m2g in m2gs])
     mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
     bond_encs = []
-    for i in range(all_bfms.shape[1]):
+    for i in BondFeatures.HOT_FEATURES:
         bond_enc = LabelBinarizer()
         bond_enc.fit(all_bfms[mask, i])
-        bond_encs.append(bond_enc)
+        bond_encs.append((i, bond_enc))
+    bond_encs.append((BondFeatures.BOOL_FEATURES, None))
     return bond_encs
 
 

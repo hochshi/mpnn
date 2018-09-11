@@ -90,12 +90,17 @@ class BasicModel(nn.Module):
         if module_type == nn.Linear:
             torch.nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
             # nn.init.constant_(m.weight, 1.0)
-            if m.bias is not None:
+            try:
                 nn.init.constant_(m.bias, 0.0)
+            except AttributeError:
+                pass
         elif module_type == nn.GRUCell:
             torch.nn.init.xavier_uniform_(m.weight_ih, gain=torch.nn.init.calculate_gain('sigmoid'))
             torch.nn.init.xavier_uniform_(m.weight_hh, gain=torch.nn.init.calculate_gain('sigmoid'))
             # nn.init.constant_(m.weight_ih, 1.0)
             # nn.init.constant_(m.weight_hh, 1.0)
-            nn.init.constant_(m.bias_ih, 0.0)
-            nn.init.constant_(m.bias_hh, 0.0)
+            try:
+                nn.init.constant_(m.bias_ih, 0.0)
+                nn.init.constant_(m.bias_hh, 0.0)
+            except AttributeError:
+                pass
