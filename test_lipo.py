@@ -107,7 +107,8 @@ while den > 10:
 dense_layer.append(nn.Linear(den, 1))
 
 model_attributes = {
-    'afm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
+    'afm': data[0].afm.shape[-1],
+    'nafm': data[0].nafm.shape[-1],
     'bfm': data[0].bfm.shape[-1],
     'mfm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
     'adj': data[0].adj.shape[-1],
@@ -117,8 +118,8 @@ model_attributes = {
 
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
-                            model_attributes['adj'], model_attributes['out']), data[0].nafm.shape[-1]),
+    GraphWrapper(BasicModel(model_attributes['afm']+model_attributes['nafm'], model_attributes['bfm'], model_attributes['mfm'],
+                            model_attributes['adj'], model_attributes['out']), model_attributes['nafm']),
     nn.BatchNorm1d(model_attributes['out']),
     # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
     nn.Sequential(*dense_layer)

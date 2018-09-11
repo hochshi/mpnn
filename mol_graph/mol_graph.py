@@ -34,12 +34,10 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    # DEAFULT_FEATURES = "GetIsAromatic,GetAtomicNum,GetTotalNumHs,GetFormalCharge,IsInRing,GetIsAromatic," \
-    #                    "GetHybridization,GetNumRadicalElectrons,GetTotalDegree,GetTotalValence".split(',')
-    DEAFULT_FEATURES = "GetAtomicNum,IsInRing,GetIsAromatic,GetTotalNumHs,GetFormalCharge,GetNeighbors".split(',')
-    HOT_FEATURES = [0]
-    BOOL_FEATURES = [1, 2]
-    NUMERIC_FEATURES = [3, 4, 5]
+    DEAFULT_FEATURES = "GetAtomicNum,GetHybridization,GetTotalNumHs,GetNeighbors,IsInRing,GetIsAromatic,GetFormalCharge".split(',')
+    HOT_FEATURES = [0, 1, 2, 3]
+    BOOL_FEATURES = [4, 5]
+    NUMERIC_FEATURES = [6]
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
         self.features = AtomFeatures.HOT_FEATURES + AtomFeatures.BOOL_FEATURES
@@ -49,10 +47,10 @@ class AtomFeatures:
     def __call__(self, atom):
         # type: (Chem.Atom) -> object
 
-        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in
-                    AtomFeatures.HOT_FEATURES + AtomFeatures.BOOL_FEATURES]
-        nfeatures = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.NUMERIC_FEATURES[:-1]]
-        nfeatures += [len(atom.GetNeighbors())]
+        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.HOT_FEATURES[:-1]]
+        features += [len(atom.GetNeighbors())]
+        features += [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.BOOL_FEATURES]
+        nfeatures = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.NUMERIC_FEATURES]
         if self.ret_pos:
             return tuple([[atom.GetIdx()]]), features, nfeatures
         return features
