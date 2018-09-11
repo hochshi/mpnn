@@ -66,7 +66,7 @@ def test_model(model, dataset):
         for batch in tqdm.tqdm(dataset):
             labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
-    return np.sqrt(metrics.mean_squared_error(true_labels, labels))
+    return metrics.mean_squared_error(true_labels, labels)
 
 seed = 317
 torch.manual_seed(seed)
@@ -109,7 +109,7 @@ dense_layer.append(nn.Linear(den, 1))
 model_attributes = {
     'afm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
     'bfm': data[0].bfm.shape[-1],
-    'mfm': data[0].afm.shape[-1],
+    'mfm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 2*data[0].afm.shape[-1],
     'classification_output': 1
@@ -153,9 +153,8 @@ for epoch in tqdm.trange(1000):
     model.train()
     epoch_loss = 0
     for batch in tqdm.tqdm(train):
-        batch['labels'] = batch['labels'].float().unsqueeze(-1)
         model.zero_grad()
-        loss = criterion(model(batch), batch['labels'])
+        loss = criterion(model(batch), batch['labels'].float().unsqueeze(-1))
         epoch_loss += loss.item()
         loss.backward()
         optimizer.step()
