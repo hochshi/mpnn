@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import numpy as np
 
 class EdgeNetwork(nn.Module):
     def __init__(self, node_features, edge_features, message_features, activation_fn=None, attn_act=None):
@@ -10,10 +10,20 @@ class EdgeNetwork(nn.Module):
         self.ef = edge_features
         self.mf = message_features
         self.act_fn = activation_fn if activation_fn is not None else nn.ReLU()
-        self.edge_map = nn.Sequential(
-            nn.Linear(self.ef, self.nf*self.mf),
-            self.act_fn
-        )
+        edge_map = []
+        in_layer = self.ef
+        while (in_layer ** 2 < self.nf*self.mf):
+            edge_map.append(nn.Linear(in_layer, in_layer**2))
+            edge_map.append(self.act_fn)
+            in_layer = in_layer**2
+        edge_map += [nn.Sequential(nn.Linear(in_layer, in_layer), self.act_fn)] * 50
+        edge_map.append(nn.Linear(in_layer, self.nf * self.mf))
+        # self.edge_map = nn.Sequential(
+        #     nn.Linear(self.ef, self.nf*self.mf)
+            # self.act_fn
+        # )
+        self.edge_map = nn.Sequential(*edge_map)
+
 
     def _precompute_edge_embed(self, bfm):
         # type: (torch.Tensor) -> None

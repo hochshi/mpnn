@@ -18,12 +18,10 @@ class GraphLevelOutput(nn.Module):
 
         i = nn.Sequential(
             nn.Linear(2*self.in_dim, self.out_dim)
-            # self.act_fn
         )
 
         j = nn.Sequential(
             nn.Linear(2*self.in_dim, self.out_dim)
-            # self.act_fn
         )
 
         self.i = i
