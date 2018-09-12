@@ -160,12 +160,10 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
-    mse = test_model(model, train)
-    tqdm.tqdm.write(
-        "epoch {} training loss: {}, MSE: {}".format(epoch, epoch_loss, mse))
+    t_mse = test_model(model, train)
     mse = test_model(model, val)
     tqdm.tqdm.write(
-        "epoch {} loss: {} validation MSE: {}".format(epoch, epoch_loss, mse))
+        "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss, t_mse, mse))
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
