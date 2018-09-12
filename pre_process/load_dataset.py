@@ -71,34 +71,17 @@ def build_atom_enc(m2gs):
     return atom_encs, scaler
 
 
-# def build_bond_enc(m2gs):
-#     bond_features = m2gs[0].graph.bfm.shape[-1]
-#     all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, bond_features) for m2g in m2gs])
-#     mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
-#     bond_encs = []
-#     for i in BondFeatures.HOT_FEATURES:
-#         bond_enc = LabelBinarizer()
-#         bond_enc.fit(all_bfms[mask, i])
-#         bond_encs.append((i, bond_enc))
-#     bond_encs.append((BondFeatures.BOOL_FEATURES, None))
-#     return bond_encs
-
 def build_bond_enc(m2gs):
-    # bond_features = m2gs[0].graph.bfm.shape[-1]
-    all_bfms = np.concatenate([m2g.graph.bfm.reshape(-1) for m2g in m2gs])
-    # mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
-    le = LabelEncoder()
-    le.fit(all_bfms)
-    return [le]
-    # bond_encs = []
-    # for i in BondFeatures.HOT_FEATURES:
-    #     LabelEncoder()
-    #     bond_enc = LabelBinarizer()
-    #     bond_enc.fit(all_bfms[mask, i])
-    #     bond_encs.append((i, bond_enc))
-    # bond_encs.append((BondFeatures.BOOL_FEATURES, None))
-    # return bond_encs
-
+    bond_features = m2gs[0].graph.bfm.shape[-1]
+    all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, bond_features) for m2g in m2gs])
+    mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
+    bond_encs = []
+    for i in BondFeatures.HOT_FEATURES:
+        bond_enc = LabelBinarizer()
+        bond_enc.fit(all_bfms[mask, i])
+        bond_encs.append((i, bond_enc))
+    bond_encs.append((BondFeatures.BOOL_FEATURES, None))
+    return bond_encs
 
 def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):
     # type: (str, str, function, MolGraphFactory, str) -> Tuple(List[Graph], int)

@@ -116,27 +116,22 @@ class Graph:
     def scale_nafm(self, scaler):
         self.nafm = scaler.transform(self.nafm)
 
-    # def encode_bfm(self, bond_enc):
-    #     # type: (BondEncoder) -> None
-    #     bf_no = self.bfm.shape[-1]
-    #     self.bfm = self.bfm.reshape(-1, bf_no)
-    #     mask = 1 == self.adj.reshape(-1)
-    #
-    #     bfm = []
-    #     for i, be in bond_enc:
-    #         if be is None:
-    #             bfm.append(self.bfm[:, i])
-    #             continue
-    #         t_bfm_features = len(be.classes_) if len(be.classes_) > 2 else 1
-    #         t_bfm = np.zeros((self.bfm.shape[0], t_bfm_features))
-    #         t_bfm[mask, :] = be.transform(self.bfm[mask, i])
-    #         bfm.append(t_bfm)
-    #     self.bfm = np.hstack(bfm).reshape(self.adj.shape + (-1,))
-
     def encode_bfm(self, bond_enc):
         # type: (BondEncoder) -> None
         bf_no = self.bfm.shape[-1]
-        self.bfm = bond_enc[0].transform(self.bfm.reshape(-1)).reshape(bf_no, bf_no)
+        self.bfm = self.bfm.reshape(-1, bf_no)
+        mask = 1 == self.adj.reshape(-1)
+
+        bfm = []
+        for i, be in bond_enc:
+            if be is None:
+                bfm.append(self.bfm[:, i])
+                continue
+            t_bfm_features = len(be.classes_) if len(be.classes_) > 2 else 1
+            t_bfm = np.zeros((self.bfm.shape[0], t_bfm_features))
+            t_bfm[mask, :] = be.transform(self.bfm[mask, i])
+            bfm.append(t_bfm)
+        self.bfm = np.hstack(bfm).reshape(self.adj.shape + (-1,))
 
     def encode(self, graph_encoder):
         if not self.is_encoded:
@@ -209,23 +204,12 @@ class MolGraph:
         self.graph.afm = afm
         self.graph.nafm = nafm
 
-    # def populate_bfm(self):
-    #     bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features)], dtype=np.int)
-    #     self.ae.ret_pos = False
-    #     for bond in self.mol.GetBonds():
-    #         pos, features = self.be(bond)
-    #         features = map(int, features)
-    #         pos = sorted(pos)
-    #         bfm[tuple(pos)] = features
-    #         bfm[tuple(reversed(pos))] = features
-    #     self.graph.bfm = bfm
-
     def populate_bfm(self):
-        bfm = np.empty([self.mol.GetNumAtoms(), self.mol.GetNumAtoms()], dtype=np.object)
+        bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features)], dtype=np.int)
         self.ae.ret_pos = False
         for bond in self.mol.GetBonds():
             pos, features = self.be(bond)
-            features = ''.join(map(str, map(int, features)))
+            features = map(int, features)
             pos = sorted(pos)
             bfm[tuple(pos)] = features
             bfm[tuple(reversed(pos))] = features
