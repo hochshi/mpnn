@@ -70,7 +70,7 @@ def test_model(model, dataset):
             # labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
             # true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
     # return metrics.mean_squared_error(true_labels, labels)
-    return loss/len(dataset.dataset)
+    return tot_loss/len(dataset.dataset)
 
 seed = 317
 torch.manual_seed(seed)
