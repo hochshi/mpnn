@@ -62,11 +62,14 @@ def test_model(model, dataset):
     model.eval()
     labels = []
     true_labels = []
+    tot_loss = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
+            output = model(batch)
+            tot_loss += criterion(output, batch['labels'].float().unsqueeze(-1)).item()
+            labels.extend(output.view(-1).cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
-    return metrics.mean_squared_error(true_labels, labels)
+    return tot_loss, metrics.mean_squared_error(true_labels, labels)
 
 seed = 317
 torch.manual_seed(seed)
@@ -134,6 +137,7 @@ if torch.cuda.is_available():
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True)
 model.train()
 
 train, test = train_test_split(data, test_size=0.1, random_state=seed)
@@ -160,10 +164,11 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
-    t_mse = test_model(model, train)
-    mse = test_model(model, val)
+    t_loss, t_mse = test_model(model, train)
+    v_loss, v_mse = test_model(model, val)
     tqdm.tqdm.write(
-        "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss, t_mse, mse))
+        "epoch {} Train loss: {} Train MSE: {} Val loss: {} Val MSE: {}".format(epoch, t_loss, t_mse, v_loss, v_mse))
+    scheduler.step(v_loss)
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
