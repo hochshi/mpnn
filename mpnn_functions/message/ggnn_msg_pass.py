@@ -9,7 +9,7 @@ class GGNNMsgPass(nn.Module):
         self.mf = message_features
         self.register_parameter('adj_w', nn.Parameter(torch.Tensor(self.ef, self.mf, self.nf)))
         self.register_parameter('message_bias', nn.Parameter(torch.zeros(self.mf).float()))
-        self.zeros = torch.zeros(1, self.mf, self.nf).float()
+        self.register_parameter('zeros', nn.Parameter(torch.zeros(1, self.mf, self.nf).float(), requires_grad=False))
 
     def init_weights(self):
         torch.nn.init.kaiming_uniform_(self.adj_w, nonlinearity='relu')
