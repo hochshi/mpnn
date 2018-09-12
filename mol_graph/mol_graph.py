@@ -34,10 +34,10 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    DEAFULT_FEATURES = "GetAtomicNum,GetHybridization,GetTotalNumHs,GetNeighbors,IsInRing,GetIsAromatic,GetFormalCharge".split(',')
-    HOT_FEATURES = [0, 1, 2, 3]
-    BOOL_FEATURES = [4, 5]
-    NUMERIC_FEATURES = [6]
+    DEAFULT_FEATURES = "GetAtomicNum,GetHybridization,IsInRing,GetIsAromatic,GetFormalCharge,GetTotalNumHs,GetNeighbors".split(',')
+    HOT_FEATURES = [0, 1]
+    BOOL_FEATURES = [2, 3]
+    NUMERIC_FEATURES = [4, 5, 6]
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
         self.features = AtomFeatures.HOT_FEATURES + AtomFeatures.BOOL_FEATURES
