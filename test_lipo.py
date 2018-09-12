@@ -62,11 +62,15 @@ def test_model(model, dataset):
     model.eval()
     labels = []
     true_labels = []
+    tot_loss = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
-            true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
-    return metrics.mean_squared_error(true_labels, labels)
+            loss = criterion(model(batch), batch['labels'].float().unsqueeze(-1))
+            tot_loss += loss.item() * batch['afm'].shape[0]
+            # labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
+            # true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
+    # return metrics.mean_squared_error(true_labels, labels)
+    return loss/len(dataset.dataset)
 
 seed = 317
 torch.manual_seed(seed)
@@ -132,7 +136,7 @@ if torch.cuda.is_available():
     model.cuda()
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 model.train()
 
 train, test = train_test_split(data, test_size=0.1, random_state=seed)
@@ -143,8 +147,8 @@ train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
 train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 16, shuffle=False, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 16, shuffle=False, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
 
 epoch_losses = []
@@ -155,14 +159,14 @@ for epoch in tqdm.trange(1000):
     for batch in tqdm.tqdm(train):
         model.zero_grad()
         loss = criterion(model(batch), batch['labels'].float().unsqueeze(-1))
-        epoch_loss += loss.item()
+        epoch_loss += loss.item() * batch['afm'].shape[0]
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
     t_mse = test_model(model, train)
     mse = test_model(model, val)
     tqdm.tqdm.write(
-        "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss, t_mse, mse))
+        "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse))
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
