@@ -7,7 +7,7 @@ from mask_batch_norm import MaskBatchNorm1d
 
 class BasicModel(nn.Module):
 
-    def __init__(self, node_features, edge_features, message_features, adjacency_dim, output_dim,
+    def __init__(self, node_features, edge_features, a_edge_features, message_features, adjacency_dim, output_dim,
                  message_func=GGNNMsgPass, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=6,
@@ -16,6 +16,7 @@ class BasicModel(nn.Module):
 
         message_opts['node_features'] = node_features
         message_opts['edge_features'] = edge_features
+        message_opts['a_edge_features'] = a_edge_features
         message_opts['message_features'] = message_features
 
         agg_opts['adj_dim'] = adjacency_dim
@@ -60,7 +61,7 @@ class BasicModel(nn.Module):
         # self.ae = atom_encoder
         # self.be = bond_encoder
 
-    def forward(self, afm, bfm, adj, mask):
+    def forward(self, afm, bfm, a_bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> object
 
         """
@@ -82,7 +83,7 @@ class BasicModel(nn.Module):
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         for i in range(self.iters):
-            node_state = self.bn(self.uf(self.ma_bn(self.mf(afm, bfm, 0 != i), mask), node_state, mask), mask)
+            node_state = self.bn(self.uf(self.ma_bn(self.mf(afm, bfm, a_bfm, 0 != i), mask), node_state, mask), mask)
         return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
 
     @staticmethod

@@ -19,6 +19,7 @@ class GraphEncoder(object):
         super(GraphEncoder, self).__init__()
         self.atom_enc = None
         self.bond_enc = None
+        self.a_bond_enc = None
         self.label_enc = None
 
 
@@ -34,10 +35,10 @@ class AtomFeatures:
     GetTotalValence
     """
 
-    DEAFULT_FEATURES = "GetAtomicNum,GetHybridization,IsInRing,GetIsAromatic,GetFormalCharge,GetTotalNumHs,GetNeighbors".split(',')
-    HOT_FEATURES = [0, 1]
-    BOOL_FEATURES = [2, 3]
-    NUMERIC_FEATURES = [4, 5, 6]
+    DEAFULT_FEATURES = "GetAtomicNum,GetHybridization,GetFormalCharge,GetTotalNumHs,IsInRing,GetIsAromatic,GetNeighbors".split(',')
+    HOT_FEATURES = [0, 1, 2, 3, 6]
+    BOOL_FEATURES = [4, 5]
+    NUMERIC_FEATURES = []
 
     def __init__(self, features=DEAFULT_FEATURES, ret_pos=True):
         self.features = AtomFeatures.HOT_FEATURES + AtomFeatures.BOOL_FEATURES
@@ -47,13 +48,11 @@ class AtomFeatures:
     def __call__(self, atom):
         # type: (Chem.Atom) -> object
 
-        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.HOT_FEATURES]
-        # features += [len(atom.GetNeighbors())]
+        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.HOT_FEATURES[:-1]]
+        features += [len(atom.GetNeighbors())]
         features += [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.BOOL_FEATURES]
-        nfeatures = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.NUMERIC_FEATURES[:-1]]
-        nfeatures += [len(atom.GetNeighbors())]
         if self.ret_pos:
-            return tuple([[atom.GetIdx()]]), features, nfeatures
+            return tuple([[atom.GetIdx()]]), features
         return features
 
 
@@ -101,9 +100,8 @@ class Graph:
         for att in self.GraphAttributes:
             setattr(self, att, np.empty(0))
         self.afm = np.empty(0)
-        self.nafm = np.empty(0)
         self.adj = np.empty(0)
-        # self.t_dist = np.empty(0)
+        self.a_bfm = np.empty(0)
         self.bfm = np.empty(0)
         self.is_encoded = False
         self.label = None
@@ -112,9 +110,6 @@ class Graph:
         # type: (AtomEncoder) -> None
         afm = [ae.transform(self.afm[:, i]) if ae is not None else self.afm[:, i] for i, ae in atom_enc]
         self.afm = np.hstack(afm)
-
-    def scale_nafm(self, scaler):
-        self.nafm = scaler.transform(self.nafm)
 
     # def encode_bfm(self, bond_enc):
     #     # type: (BondEncoder) -> None
@@ -138,11 +133,15 @@ class Graph:
         bf_no = self.bfm.shape[-1]
         self.bfm = bond_enc[0].transform(self.bfm.reshape(-1)).reshape(bf_no, bf_no)
 
+    def encode_a_bfm(self, a_b_enc):
+        bf_no = self.a_bfm.shape[-1]
+        self.a_bfm = a_b_enc[0].transform(self.a_bfm.reshape(-1)).reshape(bf_no, bf_no)
+
     def encode(self, graph_encoder):
         if not self.is_encoded:
             self.encode_afm(graph_encoder.atom_enc)
-            self.scale_nafm(graph_encoder.atom_scaler)
             self.encode_bfm(graph_encoder.bond_enc)
+            self.encode_a_bfm(graph_encoder.a_bond_enc)
             self.is_encoded = True
 
 
@@ -201,13 +200,10 @@ class MolGraph:
     def populate_afm(self):
         self.ae.ret_pos = True
         afm = np.empty([self.mol.GetNumAtoms(), len(self.ae.features)], dtype=np.int)
-        nafm = np.empty([self.mol.GetNumAtoms(), len(self.ae.nfeatures)], dtype=np.int)
         for atom in self.mol.GetAtoms():
-            pos, features, nfeatures = self.ae(atom)
+            pos, features  = self.ae(atom)
             afm[pos] = map(int, features)
-            nafm[pos] = map(int, nfeatures)
         self.graph.afm = afm
-        self.graph.nafm = nafm
 
     # def populate_bfm(self):
     #     bfm = np.zeros([self.mol.GetNumAtoms(), self.mol.GetNumAtoms(), len(self.be.features)], dtype=np.int)
@@ -231,6 +227,19 @@ class MolGraph:
             bfm[tuple(reversed(pos))] = features
         self.graph.bfm = bfm
 
+    def populate_a_bfm(self):
+        in_edges = np.empty([self.mol.GetNumAtoms(), self.mol.GetNumAtoms()], dtype=np.object)
+        self.ae.ret_pos = False
+        for bond in self.mol.GetBonds():
+            pos = sorted([bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()])
+            a_feat = self.ae(self.mol.GetAtomWithIdx(pos[0]))
+            a_feat = ''.join(map(str, map(int, a_feat)))
+            in_edges[tuple(pos)] = a_feat
+            a_feat = self.ae(self.mol.GetAtomWithIdx(pos[1]))
+            a_feat = ''.join(map(str, map(int, a_feat)))
+            in_edges[tuple(reversed(pos))] = a_feat
+        self.graph.a_bfm = in_edges
+
     def populate_adj(self):
         self.graph.adj = Chem.rdmolops.GetAdjacencyMatrix(self.mol)
 
@@ -241,6 +250,7 @@ class MolGraph:
         self.graph = self.graph_class()
         self.populate_afm()
         self.populate_bfm()
+        self.populate_a_bfm()
         self.populate_adj()
         # self.populate_t_dist()
 

@@ -45,11 +45,12 @@ def encode_molgraphs(m2gs):
     # type: (List[MolGraph]) -> List[MolGraph]
     graph_encoder = GraphEncoder()
     if graph_encoder.atom_enc is None:
-        atom_enc, atom_scaler = build_atom_enc(m2gs)
+        atom_enc = build_atom_enc(m2gs)
         graph_encoder.atom_enc = atom_enc
-        graph_encoder.atom_scaler = atom_scaler
     if graph_encoder.bond_enc is None:
         graph_encoder.bond_enc = build_bond_enc(m2gs)
+    if graph_encoder.a_bond_enc is None:
+        graph_encoder.a_bond_enc = build_a_bond_enc(m2gs)
 
     for m2g in m2gs:
         m2g.graph.encode(graph_encoder)
@@ -64,24 +65,8 @@ def build_atom_enc(m2gs):
         atom_enc.fit(all_afms[:, i])
         atom_encs.append((i, atom_enc))
     atom_encs.append((AtomFeatures.BOOL_FEATURES, None))
+    return atom_encs
 
-    all_nafms = np.vstack([m2g.graph.nafm for m2g in m2gs])
-    scaler = MinMaxScaler()
-    scaler.fit(all_nafms)
-    return atom_encs, scaler
-
-
-# def build_bond_enc(m2gs):
-#     bond_features = m2gs[0].graph.bfm.shape[-1]
-#     all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, bond_features) for m2g in m2gs])
-#     mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
-#     bond_encs = []
-#     for i in BondFeatures.HOT_FEATURES:
-#         bond_enc = LabelBinarizer()
-#         bond_enc.fit(all_bfms[mask, i])
-#         bond_encs.append((i, bond_enc))
-#     bond_encs.append((BondFeatures.BOOL_FEATURES, None))
-#     return bond_encs
 
 def build_bond_enc(m2gs):
     # bond_features = m2gs[0].graph.bfm.shape[-1]
@@ -90,14 +75,15 @@ def build_bond_enc(m2gs):
     le = LabelEncoder()
     le.fit(all_bfms)
     return [le]
-    # bond_encs = []
-    # for i in BondFeatures.HOT_FEATURES:
-    #     LabelEncoder()
-    #     bond_enc = LabelBinarizer()
-    #     bond_enc.fit(all_bfms[mask, i])
-    #     bond_encs.append((i, bond_enc))
-    # bond_encs.append((BondFeatures.BOOL_FEATURES, None))
-    # return bond_encs
+
+
+def build_a_bond_enc(m2gs):
+    # bond_features = m2gs[0].graph.bfm.shape[-1]
+    all_bfms = np.concatenate([m2g.graph.a_bfm.reshape(-1) for m2g in m2gs])
+    # mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
+    le = LabelEncoder()
+    le.fit(all_bfms)
+    return [le]
 
 
 def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):

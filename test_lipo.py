@@ -84,7 +84,6 @@ except IOError:
     for graph in data:
         graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
         graph.afm = graph.afm.astype(np.float32)
-        graph.nafm = graph.nafm.astype(np.float32)
         graph.bfm = graph.bfm.astype(np.float32)
         graph.adj = graph.adj.astype(np.float32)
         graph.label = float(graph.label)
@@ -108,10 +107,9 @@ dense_layer.append(nn.Linear(den, 1))
 
 model_attributes = {
     'afm': data[0].afm.shape[-1],
-    'nafm': data[0].nafm.shape[-1],
-    # 'bfm': data[0].bfm.shape[-1],
     'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
-    'mfm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
+    'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
+    'mfm': data[0].afm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 2*data[0].afm.shape[-1],
     'classification_output': 1
@@ -119,8 +117,8 @@ model_attributes = {
 
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm']+model_attributes['nafm'], model_attributes['bfm'], model_attributes['mfm'],
-                            model_attributes['adj'], model_attributes['out']), model_attributes['nafm']),
+    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
+                            model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
     nn.Sequential(*dense_layer)
