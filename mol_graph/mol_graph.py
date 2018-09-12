@@ -134,8 +134,7 @@ class Graph:
         self.bfm = bond_enc[0].transform(self.bfm.reshape(-1)).reshape(bf_no, bf_no)
 
     def encode_a_bfm(self, a_b_enc):
-        bf_no = self.a_bfm.shape[-1]
-        self.a_bfm = a_b_enc[0].transform(self.a_bfm.reshape(-1)).reshape(bf_no, bf_no)
+        self.a_bfm = a_b_enc[0].transform(self.a_bfm.reshape(-1)).reshape(-1)
 
     def encode(self, graph_encoder):
         if not self.is_encoded:
@@ -201,7 +200,7 @@ class MolGraph:
         self.ae.ret_pos = True
         afm = np.empty([self.mol.GetNumAtoms(), len(self.ae.features)], dtype=np.int)
         for atom in self.mol.GetAtoms():
-            pos, features  = self.ae(atom)
+            pos, features = self.ae(atom)
             afm[pos] = map(int, features)
         self.graph.afm = afm
 
@@ -228,17 +227,24 @@ class MolGraph:
         self.graph.bfm = bfm
 
     def populate_a_bfm(self):
-        in_edges = np.empty([self.mol.GetNumAtoms(), self.mol.GetNumAtoms()], dtype=np.object)
-        self.ae.ret_pos = False
-        for bond in self.mol.GetBonds():
-            pos = sorted([bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()])
-            a_feat = self.ae(self.mol.GetAtomWithIdx(pos[0]))
-            a_feat = ''.join(map(str, map(int, a_feat)))
-            in_edges[tuple(pos)] = a_feat
-            a_feat = self.ae(self.mol.GetAtomWithIdx(pos[1]))
-            a_feat = ''.join(map(str, map(int, a_feat)))
-            in_edges[tuple(reversed(pos))] = a_feat
-        self.graph.a_bfm = in_edges
+        self.ae.ret_pos = True
+        afm = np.empty([self.mol.GetNumAtoms()], dtype=np.object)
+        for atom in self.mol.GetAtoms():
+            pos, features = self.ae(atom)
+            afm[pos] = ''.join(map(str, map(int, features)))
+        self.graph.a_bfm = afm
+        #
+        # in_edges = np.empty([self.mol.GetNumAtoms(), self.mol.GetNumAtoms()], dtype=np.object)
+        # self.ae.ret_pos = False
+        # for bond in self.mol.GetBonds():
+        #     pos = sorted([bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()])
+        #     a_feat = self.ae(self.mol.GetAtomWithIdx(pos[0]))
+        #     a_feat = ''.join(map(str, map(int, a_feat)))
+        #     in_edges[tuple(pos)] = a_feat
+        #     a_feat = self.ae(self.mol.GetAtomWithIdx(pos[1]))
+        #     a_feat = ''.join(map(str, map(int, a_feat)))
+        #     in_edges[tuple(reversed(pos))] = a_feat
+        # self.graph.a_bfm = in_edges
 
     def populate_adj(self):
         self.graph.adj = Chem.rdmolops.GetAdjacencyMatrix(self.mol)

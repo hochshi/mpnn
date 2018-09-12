@@ -88,7 +88,8 @@ except IOError:
     for graph in data:
         graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
         graph.afm = graph.afm.astype(np.float32)
-        graph.bfm = graph.bfm.astype(np.float32)
+        graph.bfm = graph.bfm.astype(np.long)
+        graph.a_bfm = graph.a_bfm.astype(np.long)
         graph.adj = graph.adj.astype(np.float32)
         graph.label = float(graph.label)
     graph_encoder = GraphEncoder()
