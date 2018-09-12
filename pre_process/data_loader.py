@@ -12,7 +12,7 @@ from mol_graph import Graph, Graph2D
 def embed_arr(arr, dims):
     new_arr = np.zeros(dims, dtype=np.float32)
     mask = [slice(0, i) for i in arr.shape]
-    new_arr[mask] = arr
+    new_arr[tuple(mask)] = arr
     return new_arr
 
 
