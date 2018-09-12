@@ -47,10 +47,11 @@ class AtomFeatures:
     def __call__(self, atom):
         # type: (Chem.Atom) -> object
 
-        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.HOT_FEATURES[:-1]]
-        features += [len(atom.GetNeighbors())]
+        features = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.HOT_FEATURES]
+        # features += [len(atom.GetNeighbors())]
         features += [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.BOOL_FEATURES]
-        nfeatures = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.NUMERIC_FEATURES]
+        nfeatures = [getattr(atom, AtomFeatures.DEAFULT_FEATURES[feature])() for feature in AtomFeatures.NUMERIC_FEATURES[:-1]]
+        nfeatures += [len(atom.GetNeighbors())]
         if self.ret_pos:
             return tuple([[atom.GetIdx()]]), features, nfeatures
         return features
