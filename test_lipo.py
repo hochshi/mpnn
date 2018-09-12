@@ -109,7 +109,8 @@ dense_layer.append(nn.Linear(den, 1))
 model_attributes = {
     'afm': data[0].afm.shape[-1],
     'nafm': data[0].nafm.shape[-1],
-    'bfm': data[0].bfm.shape[-1],
+    # 'bfm': data[0].bfm.shape[-1],
+    'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
     'mfm': data[0].afm.shape[-1] + data[0].nafm.shape[-1],
     'adj': data[0].adj.shape[-1],
     'out': 2*data[0].afm.shape[-1],
