@@ -72,6 +72,17 @@ def test_model(model, dataset):
     # return metrics.mean_squared_error(true_labels, labels)
     return tot_loss/len(dataset.dataset)
 
+def test_model_class(model, dataset):
+    model.eval()
+    labels = []
+    true_labels = []
+    with torch.no_grad():
+        for batch in tqdm.tqdm(dataset):
+            labels = labels + model(batch).max(dim=-1)[1].cpu().data.numpy().tolist()
+            true_labels = true_labels + batch['labels'].cpu().data.numpy().tolist()
+    return metrics.accuracy_score(true_labels, labels)
+
+
 seed = 317
 torch.manual_seed(seed)
 data_file = sys.argv[1]
@@ -176,12 +187,17 @@ for epoch in tqdm.trange(1000):
     epoch_losses.append(epoch_loss)
     t_mse = test_model(model, train)
     mse = test_model(model, val)
+    acc = test_model_class(model, val)
     tqdm.tqdm.write(
-        "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse))
+        "epoch {} loss: {} Train MSE: {} Val MSE: {} Val ACC: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse, acc))
+    if mse < 1.55:
+        break
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
-acc, pre, rec = test_model(model, test)
-f1 = 2 * (pre * rec) / (pre + rec)
-tqdm.tqdm.write(
-    "Testing acc: {}, pre: {}, rec: {}, F1: {}".format(acc, pre, rec, f1))
+mse = test_model(model, test)
+tqdm.tqdm.write("Testing MSE: {}".format(mse))
+acc = test_model_class(model, val)
+tqdm.tqdm.write("Val acc: {}".format(acc))
+acc = test_model_class(model, test)
+tqdm.tqdm.write("Test acc: {}".format(acc))
