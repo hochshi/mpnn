@@ -130,12 +130,12 @@ for i in range(50):
 dense_layer.append(nn.Linear(den, no_labels))
 
 model_attributes = {
-    'afm': data[0].afm.shape[-1],
+    'afm': 50,
     'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
     'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': data[0].afm.shape[-1],
+    'mfm': 50,
     'adj': data[0].adj.shape[-1],
-    'out': 2*data[0].afm.shape[-1],
+    'out': 100,
     'classification_output': no_labels
 }
 
@@ -144,8 +144,8 @@ model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
-    nn.Sequential(*dense_layer)
+    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    # nn.Sequential(*dense_layer)
 )
 
 model.float()

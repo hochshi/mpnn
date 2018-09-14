@@ -41,6 +41,6 @@ class GGNNMsgPass(nn.Module):
             self.edge_att = self._precompute_att_embed(a_bfm, self.adj_a)
 
         batch_size, num_nodes, nfeat = afm.shape
-        messages = self.edge_embed.mul(self.edge_att.unsqueeze(-1)).bmm(afm.view(batch_size, num_nodes * nfeat, 1))
+        messages = self.edge_embed.mul(self.edge_att.unsqueeze(-1)).bmm(afm.view(batch_size, num_nodes * self.nf, 1))
         messages = messages.view(batch_size, num_nodes, self.mf)
         return messages + self.message_bias
