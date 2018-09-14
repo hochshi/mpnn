@@ -85,12 +85,13 @@ class BasicModel(nn.Module):
         self.mf.edge_att = self.mf._precompute_att_embed(a_bfm, self.mf.adj_a)
         # node_state = afm
         batch, nodes, _ = afm.shape
+        i_node_state = self.mf.edge_att.view(batch, nodes, self.nf)
         node_state = self.mf.edge_att.view(batch, nodes, self.nf)
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         for i in range(self.iters):
             node_state = self.uf(self.mf(node_state, bfm, a_bfm), node_state, mask)
-        return self.of(torch.cat([node_state, afm], dim=-1), mask=mask)
+        return self.of(torch.cat([node_state, i_node_state], dim=-1), mask=mask)
 
     @staticmethod
     def init_weights(m):
