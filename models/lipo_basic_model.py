@@ -26,7 +26,7 @@ class BasicModel(nn.Module):
         update_opts['node_features'] = node_features
         update_opts['message_features'] = message_features
 
-        readout_opts['node_features'] = node_features
+        readout_opts['node_features'] = 3*node_features
         readout_opts['output_dim'] = output_dim
 
         self.nf = node_features
