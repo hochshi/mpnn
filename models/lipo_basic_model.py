@@ -4,13 +4,15 @@ from mpnn_functions import *
 from mpnn_functions.message.ggnn_msg_pass import GGNNMsgPass
 from mask_batch_norm import MaskBatchNorm1d
 
+_DEF_STEPS = 6
+
 
 class BasicModel(nn.Module):
 
     def __init__(self, node_features, edge_features, a_edge_features, message_features, adjacency_dim, output_dim,
                  message_func=GGNNMsgPass, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
-                 update_func=GRUUpdate, update_opts={}, message_steps=6,
+                 update_func=GRUUpdate, update_opts={}, message_steps=_DEF_STEPS,
                  readout_func=GraphLevelOutput, readout_opts={}, atom_encoder=None, bond_encoder=None):
         super(BasicModel, self).__init__()
 
@@ -85,13 +87,13 @@ class BasicModel(nn.Module):
         self.mf.edge_att = self.mf._precompute_att_embed(a_bfm, self.mf.adj_a)
         # node_state = afm
         batch, nodes, _ = afm.shape
-        i_node_state = self.mf.edge_att.view(batch, nodes, self.nf)
-        node_state = self.mf.edge_att.view(batch, nodes, self.nf)
+        node_states = []
+        node_states.append(self.mf.edge_att.view(batch, nodes, self.nf))
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         for i in range(self.iters):
-            node_state = self.uf(self.mf(node_state, bfm, a_bfm), node_state, mask)
-        return self.of(torch.cat([node_state, i_node_state], dim=-1), mask=mask)
+            node_states.append(self.uf(self.mf(node_states[-1], bfm, a_bfm), node_states[-1], mask))
+        return self.of(torch.cat(node_states, dim=-1), mask=mask)
 
     @staticmethod
     def init_weights(m):

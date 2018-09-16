@@ -11,7 +11,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
 
-from models.lipo_basic_model import BasicModel
+from models.lipo_basic_model import BasicModel, _DEF_STEPS
 from models.graph_norm_wrapper import GraphWrapper
 from mol_graph import *
 from mol_graph import GraphEncoder
@@ -130,12 +130,12 @@ for i in range(50):
 dense_layer.append(nn.Linear(den, no_labels))
 
 model_attributes = {
-    'afm': 50,
+    'afm': 8,
     'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
     'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': 50,
+    'mfm': 8,
     'adj': data[0].adj.shape[-1],
-    'out': 100,
+    'out': 8*_DEF_STEPS,
     'classification_output': no_labels
 }
 
