@@ -135,7 +135,7 @@ model_attributes = {
     'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
     'mfm': 8,
     'adj': data[0].adj.shape[-1],
-    'out': 8*_DEF_STEPS,
+    'out': 8*(_DEF_STEPS+1),
     'classification_output': no_labels
 }
 

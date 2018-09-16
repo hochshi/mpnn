@@ -4,7 +4,7 @@ from mpnn_functions import *
 from mpnn_functions.message.ggnn_msg_pass import GGNNMsgPass
 from mask_batch_norm import MaskBatchNorm1d
 
-_DEF_STEPS = 6
+_DEF_STEPS = 5
 
 
 class BasicModel(nn.Module):
