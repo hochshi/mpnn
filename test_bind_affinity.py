@@ -88,13 +88,14 @@ def test_model_class(model, dataset):
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     batch_size = pred.shape[0]
-    neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
-
-    pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
-    non_binders = pred.mul(1 - label)
-    non_mask = (non_binders >= _NEG_CUTOFF).float()
-    neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
-    return (neg_loss + pos_loss)/float(batch_size)
+    pred = F.threshold(pred, _NEG_CUTOFF, 0)
+    return F.l1_loss(pred, label)
+    # neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
+    # pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
+    # non_binders = pred.mul(1 - label)
+    # non_mask = (non_binders >= _NEG_CUTOFF).float()
+    # neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
+    # return (neg_loss + pos_loss)/float(batch_size)
     # return F.mse_loss(pred, aff)
 
 
