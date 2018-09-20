@@ -87,18 +87,18 @@ def test_model_class(model, dataset):
 
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
-    # batch_size = pred.shape[0]
-    # neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
-    #
-    # pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
-    # non_binders = pred.mul(1 - label)
-    # non_mask = (non_binders >= _NEG_CUTOFF).float()
-    # neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
-    # return (neg_loss + pos_loss)/float(batch_size)
-    return F.mse_loss(pred, aff)
+    batch_size = pred.shape[0]
+    neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
+
+    pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
+    non_binders = pred.mul(1 - label)
+    non_mask = (non_binders >= _NEG_CUTOFF).float()
+    neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
+    return (neg_loss + pos_loss)/float(batch_size)
+    # return F.mse_loss(pred, aff)
 
 
-_NEG_AFF = np.float32(4.32)
+_NEG_AFF = np.float32(0.0)
 _NEG_CUTOFF = 5
 seed = 317
 torch.manual_seed(seed)
@@ -130,12 +130,12 @@ graph_encoder = GraphEncoder()
 
 
 model_attributes = {
-    'afm': 25,
+    'afm': 8,
     'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
     'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': 25,
+    'mfm': 8,
     'adj': 1,
-    'out': 25*(_DEF_STEPS+1),
+    'out': 8*(_DEF_STEPS+1),
     'classification_output': 1
 }
 den = int(model_attributes['out'])
@@ -180,9 +180,9 @@ train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 256, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 256, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 256, shuffle=True, collate_fn=collate_2d_graphs)
 
 
 epoch_losses = []
