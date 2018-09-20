@@ -138,7 +138,7 @@ class Graph:
 
     def encode(self, graph_encoder):
         if not self.is_encoded:
-            self.encode_afm(graph_encoder.atom_enc)
+            # self.encode_afm(graph_encoder.atom_enc)
             self.encode_bfm(graph_encoder.bond_enc)
             self.encode_a_bfm(graph_encoder.a_bond_enc)
             self.is_encoded = True
@@ -254,7 +254,7 @@ class MolGraph:
 
     def create_graph(self):
         self.graph = self.graph_class()
-        self.populate_afm()
+        # self.populate_afm()
         self.populate_bfm()
         self.populate_a_bfm()
         self.populate_adj()

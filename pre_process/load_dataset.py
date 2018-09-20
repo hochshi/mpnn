@@ -9,10 +9,10 @@ import rdkit
 from rdkit import Chem
 
 
-def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
+def generate_molgraphs(mol_strs, labels, affinities, text2molfunc, mol_graph_factory):
     # type: (np.array, np.array, function, MolGraphFactory) -> List[MolGraph]
     m2gs = []
-    for mol_str, label in zip(mol_strs, labels):
+    for mol_str, label, aff in zip(mol_strs, labels, affinities):
         mol = text2molfunc(mol_str)
         if mol is None:
             continue
@@ -21,6 +21,7 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
         m2g = mol_graph_factory.prep_graph(mol)
         m2g.create_graph()
         m2g.graph.label = label
+        m2g.graph.aff = aff
         m2gs.append(m2g)
     return m2gs
 
@@ -44,9 +45,9 @@ def generate_affinity_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factor
 def encode_molgraphs(m2gs):
     # type: (List[MolGraph]) -> List[MolGraph]
     graph_encoder = GraphEncoder()
-    if graph_encoder.atom_enc is None:
-        atom_enc = build_atom_enc(m2gs)
-        graph_encoder.atom_enc = atom_enc
+    # if graph_encoder.atom_enc is None:
+    #     atom_enc = build_atom_enc(m2gs)
+    #     graph_encoder.atom_enc = atom_enc
     if graph_encoder.bond_enc is None:
         graph_encoder.bond_enc = build_bond_enc(m2gs)
     if graph_encoder.a_bond_enc is None:
@@ -86,14 +87,14 @@ def build_a_bond_enc(m2gs):
     return [le]
 
 
-def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname):
+def load_classification_dataset(file_name, moltext_colname, text2molfunc, mol_graph_factory, label_colname, aff_colname):
     # type: (str, str, function, MolGraphFactory, str) -> Tuple(List[Graph], int)
     df = pd.read_csv(file_name)
     graphs = [m2g.graph for m2g in
               encode_molgraphs(
                   generate_molgraphs(
-                      df[moltext_colname].values, df[label_colname].values, text2molfunc, mol_graph_factory
-                  )
+                      df[moltext_colname].values, df[label_colname].values, df[aff_colname].values.astype(np.float32),
+                      text2molfunc, mol_graph_factory)
               )]
     labels = [graph.label for graph in graphs]
     max_label = np.NINF

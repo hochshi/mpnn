@@ -65,7 +65,7 @@ class BasicModel(nn.Module):
         # self.ae = atom_encoder
         # self.be = bond_encoder
 
-    def forward(self, afm, bfm, a_bfm, adj, mask):
+    def forward(self, bfm, a_bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> object
 
         """
@@ -86,7 +86,7 @@ class BasicModel(nn.Module):
         self.mf.edge_embed = self.mf._precompute_edge_embed(bfm, self.mf.adj_w)
         self.mf.edge_att = self.mf._precompute_att_embed(a_bfm, self.mf.adj_a)
         # node_state = afm
-        batch, nodes, _ = afm.shape
+        batch, nodes = a_bfm.shape
         node_states = []
         node_states.append(self.mf.edge_att.view(batch, nodes, self.nf))
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
