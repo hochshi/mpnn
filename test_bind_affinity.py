@@ -87,14 +87,15 @@ def test_model_class(model, dataset):
 
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
-    batch_size = pred.shape[0]
-    neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
-
-    pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
-    non_binders = pred.mul(1 - label)
-    non_mask = (non_binders >= _NEG_CUTOFF).float()
-    neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
-    return (neg_loss + pos_loss)/float(batch_size)
+    # batch_size = pred.shape[0]
+    # neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
+    #
+    # pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
+    # non_binders = pred.mul(1 - label)
+    # non_mask = (non_binders >= _NEG_CUTOFF).float()
+    # neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
+    # return (neg_loss + pos_loss)/float(batch_size)
+    return F.mse_loss(pred, aff)
 
 
 _NEG_AFF = np.float32(4.32)
@@ -120,6 +121,7 @@ for graph in data:
     graph.bfm = graph.bfm.astype(np.long)
     graph.a_bfm = graph.a_bfm.astype(np.long)
     graph.adj = graph.adj.astype(np.float32)
+    graph.aff = np.float32(graph.aff if target == graph.label else 0)
     graph.label = np.float32(target == graph.label)
 graph_encoder = GraphEncoder()
     # with open('basic_model_graph_encoder.pickle', 'wb') as out:
