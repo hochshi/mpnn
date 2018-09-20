@@ -20,6 +20,7 @@ from pre_process.load_dataset import load_classification_dataset
 from mpnn_functions.encoders.c_autoencoder import AutoEncoder
 import tqdm
 from torch.nn import functional as F
+from pre_process.utils import from_numpy
 
 
 def filter_dataset(data, labels, lower_cutoff=None, upper_cutoff=None, count_cutoff=None):
@@ -87,16 +88,16 @@ def test_model_class(model, dataset):
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     batch_size = pred.shape[0]
-    neg_aff = torch.Tensor([_NEG_AFF] * batch_size)
+    neg_aff = from_numpy([_NEG_AFF] * batch_size)
 
     pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
     non_binders = pred.mul(1 - label)
-    non_mask = (non_binders >= _NEG_CUTOFF).float()
+    non_mask = (non_binders >= _NEG_CUTOFF)
     neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
     return (neg_loss + pos_loss)/float(batch_size)
 
 
-_NEG_AFF = 4.95
+_NEG_AFF = np.float32(4.95)
 _NEG_CUTOFF = 5
 seed = 317
 torch.manual_seed(seed)
