@@ -21,6 +21,7 @@ from mpnn_functions.encoders.c_autoencoder import AutoEncoder
 import tqdm
 from torch.nn import functional as F
 from pre_process.utils import from_numpy
+from sklearn import preprocessing
 
 
 def filter_dataset(data, labels, lower_cutoff=None, upper_cutoff=None, count_cutoff=None):
@@ -65,14 +66,16 @@ def test_model(model, dataset):
     labels = []
     true_labels = []
     tot_loss = 0
+    tot_samples = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
             output = model(batch).squeeze()
-            loss = aff_criterion(output, batch['affs'])
-            tot_loss += loss.item() * batch['a_bfm'].shape[0]
+            loss, samples = criterion(output, batch['labels'], batch['affs'])
+            tot_loss += loss.item()
+            tot_samples += samples
             labels.extend(output.ge(_NEG_CUTOFF).cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
-    return tot_loss/len(dataset.dataset), metrics.accuracy_score(true_labels, labels)
+    return tot_loss/tot_samples, metrics.accuracy_score(true_labels, labels)
 
 def test_model_class(model, dataset):
     model.eval()
@@ -88,15 +91,12 @@ def test_model_class(model, dataset):
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     batch_size = pred.shape[0]
-    pred = F.threshold(pred, _NEG_CUTOFF, 0)
-    return F.l1_loss(pred, label)
-    # neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
-    # pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
-    # non_binders = pred.mul(1 - label)
-    # non_mask = (non_binders >= _NEG_CUTOFF).float()
-    # neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
-    # return (neg_loss + pos_loss)/float(batch_size)
-    # return F.mse_loss(pred, aff)
+    neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
+    pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
+    non_binders = pred.mul(1 - label)
+    non_mask = (non_binders >= _NEG_CUTOFF).float()
+    neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
+    return (neg_loss + pos_loss), int(label.sum().item() + non_mask.sum().item())
 
 
 _NEG_AFF = np.float32(0.0)
@@ -117,13 +117,20 @@ mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 # except IOError:
 data, no_labels, all_labels = load_classification_dataset(data_file+'.csv', 'InChI', Chem.MolFromInchi, mgf,
                                                           'Gene_Symbol', 'pXC50')
+affinities = []
 for graph in data:
     graph.mask = np.ones(graph.a_bfm.shape[0], dtype=np.float32).reshape(graph.a_bfm.shape[0], 1)
     graph.bfm = graph.bfm.astype(np.long)
     graph.a_bfm = graph.a_bfm.astype(np.long)
     graph.adj = graph.adj.astype(np.float32)
     graph.aff = np.float32(graph.aff if target == graph.label else 0)
+    affinities.append(graph.aff)
     graph.label = np.float32(target == graph.label)
+
+scaler = preprocessing.MinMaxScaler()
+trans_aff = scaler.fit_transform(affinities)
+for graph, aff in zip(data, trans_aff):
+    graph.aff = np.float32(aff)
 graph_encoder = GraphEncoder()
     # with open('basic_model_graph_encoder.pickle', 'wb') as out:
     #     pickle.dump(graph_encoder, out)
@@ -153,36 +160,23 @@ dense_layer.append(nn.Linear(den, model_attributes['classification_output']))
 
 
 
-aff_model = nn.Sequential(
+model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
     nn.Sequential(*dense_layer)
 )
-cls_model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
-                            model_attributes['adj'], model_attributes['out'])),
-    nn.BatchNorm1d(model_attributes['out']),
-    nn.Sequential(*dense_layer)
-)
+model.float()
+model.apply(BasicModel.init_weights)
 
-aff_model.float()
-aff_model.apply(BasicModel.init_weights)
-cls_model.float()
-cls_model.apply(BasicModel.init_weights)
-
-print "Model has: {} parameters".format(count_model_params(aff_model))
+print "Model has: {} parameters".format(count_model_params(model))
 print model_attributes
 if torch.cuda.is_available():
-    aff_model.cuda()
-    cls_model.cuda()
+    model.cuda()
 
-cls_criterion = nn.BCEWithLogitsLoss()
-aff_criterion = nn.MSELoss()
-aff_optimizer = optim.Adam(aff_model.parameters(), lr=1e-4, weight_decay=1e-4)
-aff_model.train()
-cls_optimizer = optim.Adam(cls_model.parameters(), lr=1e-4, weight_decay=1e-4)
-cls_model.train()
+criterion = loss_func
+optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+model.train()
 
 train, test, train_labels, _ = train_test_split(data, all_labels, test_size=0.1, random_state=seed, stratify=all_labels)
 del data
@@ -199,21 +193,19 @@ test = DataLoader(test, 256, shuffle=True, collate_fn=collate_2d_graphs)
 epoch_losses = []
 break_con = False
 for epoch in tqdm.trange(1000):
-    aff_model.train()
-    cls_model.train()
+    model.train()
+    epoch_loss = 0
+    epoch_samples = 0
     for batch in tqdm.tqdm(train):
-        aff_optimizer.zero_grad()
-        cls_optimizer.zero_grad()
-        cls_out = cls_model(batch).squeeze()
-        cls_loss = cls_criterion(cls_out, batch['labels'])
-        cls_out.detach()
-        aff_loss = aff_criterion(aff_model(batch).squeeze().mul(cls_out), batch['affs'])
-        cls_loss.backward()
-        cls_optimizer.step()
-        aff_loss.backward()
-        aff_optimizer.step()
+        loss, samples = criterion(model(batch).squeeze(), batch['labels'], batch['affs'])
+        epoch_loss += loss.item()
+        epoch_samples += samples
+        loss = loss/samples
+        loss.backward()
+        optimizer.step()
+    epoch_losses.append(epoch_loss)
     # t_mse, t_acc = test_model(model, val)
-    mse, acc = test_model(aff_model, val)
+    mse, acc = test_model(model, val)
     # tqdm.tqdm.write(
     #     "epoch {} loss: {}, Train MSE: {}, Train ACC: {}, Val MSE: {}, Val ACC: {}.".format(epoch, epoch_loss/len(train.dataset), t_mse, t_acc, mse, acc))
     tqdm.tqdm.write(
@@ -223,6 +215,6 @@ for epoch in tqdm.trange(1000):
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
-mse, acc = test_model(aff_model, test)
+mse, acc = test_model(model, test)
 tqdm.tqdm.write("Testing MSE: {}, ACC: {}".format(mse, acc))
 
