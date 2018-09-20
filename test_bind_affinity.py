@@ -68,7 +68,7 @@ def test_model(model, dataset):
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
             output = model(batch).squeeze()
-            loss = criterion(output, batch['labels'], batch['affs'])
+            loss = aff_criterion(output, batch['affs'])
             tot_loss += loss.item() * batch['a_bfm'].shape[0]
             labels.extend(output.ge(_NEG_CUTOFF).cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
@@ -153,26 +153,36 @@ dense_layer.append(nn.Linear(den, model_attributes['classification_output']))
 
 
 
-model = nn.Sequential(
+aff_model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    nn.Sequential(*dense_layer)
+)
+cls_model = nn.Sequential(
+    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
+                            model_attributes['adj'], model_attributes['out'])),
+    nn.BatchNorm1d(model_attributes['out']),
     nn.Sequential(*dense_layer)
 )
 
-model.float()
-model.apply(BasicModel.init_weights)
+aff_model.float()
+aff_model.apply(BasicModel.init_weights)
+cls_model.float()
+cls_model.apply(BasicModel.init_weights)
 
 print "Model has: {} parameters".format(count_model_params(model))
-print model
 print model_attributes
 if torch.cuda.is_available():
-    model.cuda()
+    aff_model.cuda()
+    cls_model.cuda()
 
-criterion = loss_func
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
-model.train()
+cls_criterion = nn.BCEWithLogitsLoss()
+aff_criterion = nn.MSELoss()
+aff_optimizer = optim.Adam(aff_model.parameters(), lr=1e-4, weight_decay=1e-4)
+aff_model.train()
+cls_optimizer = optim.Adam(cls_model.parameters(), lr=1e-4, weight_decay=1e-4)
+cls_model.train()
 
 train, test, train_labels, _ = train_test_split(data, all_labels, test_size=0.1, random_state=seed, stratify=all_labels)
 del data
@@ -189,17 +199,20 @@ test = DataLoader(test, 256, shuffle=True, collate_fn=collate_2d_graphs)
 epoch_losses = []
 break_con = False
 for epoch in tqdm.trange(1000):
-    model.train()
-    epoch_loss = 0
+    aff_model.train()
+    cls_model.train()
     for batch in tqdm.tqdm(train):
-        model.zero_grad()
-        loss = criterion(model(batch).squeeze(), batch['labels'], batch['affs'])
-        epoch_loss += loss.item() * batch['a_bfm'].shape[0]
-        loss.backward()
-        optimizer.step()
-    epoch_losses.append(epoch_loss)
+        aff_optimizer.zero_grad()
+        cls_optimizer.zero_grad()
+        cls_out = cls_model(batch).squeeze()
+        cls_loss = cls_criterion(cls_out, batch['labels'].long())
+        aff_loss = aff_criterion(aff_model(batch).squeeze().mul(cls_out), batch['affs'])
+        cls_loss.backward()
+        cls_optimizer.step()
+        aff_loss.backward()
+        aff_optimizer.step()
     # t_mse, t_acc = test_model(model, val)
-    mse, acc = test_model(model, val)
+    mse, acc = test_model(aff_model, val)
     # tqdm.tqdm.write(
     #     "epoch {} loss: {}, Train MSE: {}, Train ACC: {}, Val MSE: {}, Val ACC: {}.".format(epoch, epoch_loss/len(train.dataset), t_mse, t_acc, mse, acc))
     tqdm.tqdm.write(
@@ -209,6 +222,6 @@ for epoch in tqdm.trange(1000):
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
-mse, acc = test_model(model, test)
+mse, acc = test_model(aff_model, test)
 tqdm.tqdm.write("Testing MSE: {}, ACC: {}".format(mse, acc))
 
