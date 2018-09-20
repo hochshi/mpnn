@@ -92,7 +92,7 @@ class BasicModel(nn.Module):
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         for i in range(self.iters):
-            node_states.append(self.uf(self.mf(node_states[-1], bfm, a_bfm), node_states[-1], mask))
+            node_states.append(self.uf(self.mf(node_states[-1], bfm, a_bfm, True), node_states[-1], mask))
         return self.of(torch.cat(node_states, dim=-1), mask=mask)
 
     @staticmethod

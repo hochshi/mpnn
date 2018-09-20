@@ -65,12 +65,12 @@ def test_model(model, dataset):
     tot_loss = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            loss = criterion(model(batch), batch['labels'])
+            output = model(batch)
+            loss = criterion(output, batch['labels'])
             tot_loss += loss.item() * batch['afm'].shape[0]
-            # labels.extend(model(batch).view(-1).cpu().data.numpy().tolist())
-            # true_labels.extend(batch['labels'].view(-1).cpu().data.numpy().tolist())
-    # return metrics.mean_squared_error(true_labels, labels)
-    return tot_loss/len(dataset.dataset)
+            labels.extend(output.max(dim=-1)[1].cpu().data.numpy().tolist())
+            true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
+    return tot_loss/len(dataset.dataset), metrics.accuracy_score(true_labels, labels)
 
 def test_model_class(model, dataset):
     model.eval()
