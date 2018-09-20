@@ -67,7 +67,7 @@ def test_model(model, dataset):
     tot_loss = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            output = model(batch)
+            output = model(batch).squeeze()
             loss = criterion(output, batch['labels'], batch['affs'])
             tot_loss += loss.item() * batch['a_bfm'].shape[0]
             labels.extend(output.ge(_NEG_CUTOFF).cpu().data.numpy().tolist())
@@ -88,16 +88,16 @@ def test_model_class(model, dataset):
 def loss_func(pred, label, aff):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     batch_size = pred.shape[0]
-    neg_aff = from_numpy([_NEG_AFF] * batch_size)
+    neg_aff = from_numpy(np.array([_NEG_AFF] * batch_size))
 
     pos_loss = F.mse_loss(pred.mul(label), aff.mul(label), reduction='sum')
     non_binders = pred.mul(1 - label)
-    non_mask = (non_binders >= _NEG_CUTOFF)
+    non_mask = (non_binders >= _NEG_CUTOFF).float()
     neg_loss = F.mse_loss(non_binders.mul(non_mask), neg_aff.mul(non_mask), reduction='sum')
     return (neg_loss + pos_loss)/float(batch_size)
 
 
-_NEG_AFF = np.float32(4.95)
+_NEG_AFF = np.float32(4.32)
 _NEG_CUTOFF = 5
 seed = 317
 torch.manual_seed(seed)
@@ -127,34 +127,35 @@ graph_encoder = GraphEncoder()
     # np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 
-den = int(2*data[0].a_bfm.shape[-1])
+model_attributes = {
+    'afm': 25,
+    'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
+    'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
+    'mfm': 25,
+    'adj': 1,
+    'out': 25*(_DEF_STEPS+1),
+    'classification_output': 1
+}
+den = int(model_attributes['out'])
 dense_layer = []
 for i in range(50):
-    new_den = 2 * den
-    if new_den > no_labels:
+    new_den = int(np.floor(den/2))
+    if new_den < 32:
         break
     dense_layer.append(nn.Linear(den, new_den))
     dense_layer.append(nn.ReLU())
     den = new_den
-dense_layer.append(nn.Linear(den, no_labels))
+dense_layer.append(nn.Linear(den, model_attributes['classification_output']))
 
-model_attributes = {
-    'afm': 8,
-    'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
-    'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': 8,
-    'adj': data[0].adj.shape[-1],
-    'out': 8*(_DEF_STEPS+1),
-    'classification_output': 1
-}
+
 
 
 model = nn.Sequential(
     GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
-    # nn.Sequential(*dense_layer)
+    # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    nn.Sequential(*dense_layer)
 )
 
 model.float()
@@ -167,7 +168,7 @@ if torch.cuda.is_available():
     model.cuda()
 
 criterion = loss_func
-optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 model.train()
 
 train, test, train_labels, _ = train_test_split(data, all_labels, test_size=0.1, random_state=seed, stratify=all_labels)
@@ -177,9 +178,9 @@ train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
 
 
 epoch_losses = []
@@ -194,17 +195,17 @@ for epoch in tqdm.trange(1000):
         loss.backward()
         optimizer.step()
     epoch_losses.append(epoch_loss)
+    # t_mse, t_acc = test_model(model, val)
     mse, acc = test_model(model, val)
+    # tqdm.tqdm.write(
+    #     "epoch {} loss: {}, Train MSE: {}, Train ACC: {}, Val MSE: {}, Val ACC: {}.".format(epoch, epoch_loss/len(train.dataset), t_mse, t_acc, mse, acc))
     tqdm.tqdm.write(
-        "epoch {} loss: {}, Val MSE: {}, Val ACC: {}.".format(epoch, epoch_loss/len(train.dataset), mse, acc))
-    if mse < 1.55:
-        break
+        "epoch {} Val MSE: {}, Val ACC: {}.".format(epoch, mse, acc))
+    # if mse < 1.55:
+    #     break
     # if not np.isnan(f1) and f1 > 0.8:
     #     save_model(model, 'epoch_'+str(epoch), model_attributes, {'acc': acc, 'pre': pre, 'rec': rec, 'f1': f1})
 
-mse = test_model(model, test)
-tqdm.tqdm.write("Testing MSE: {}".format(mse))
-acc = test_model_class(model, val)
-tqdm.tqdm.write("Val acc: {}".format(acc))
-acc = test_model_class(model, test)
-tqdm.tqdm.write("Test acc: {}".format(acc))
+mse, acc = test_model(model, test)
+tqdm.tqdm.write("Testing MSE: {}, ACC: {}".format(mse, acc))
+
