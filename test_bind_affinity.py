@@ -171,7 +171,7 @@ aff_model.apply(BasicModel.init_weights)
 cls_model.float()
 cls_model.apply(BasicModel.init_weights)
 
-print "Model has: {} parameters".format(count_model_params(model))
+print "Model has: {} parameters".format(count_model_params(aff_model))
 print model_attributes
 if torch.cuda.is_available():
     aff_model.cuda()
@@ -205,7 +205,8 @@ for epoch in tqdm.trange(1000):
         aff_optimizer.zero_grad()
         cls_optimizer.zero_grad()
         cls_out = cls_model(batch).squeeze()
-        cls_loss = cls_criterion(cls_out, batch['labels'].long())
+        cls_loss = cls_criterion(cls_out, batch['labels'])
+        cls_out.detach()
         aff_loss = aff_criterion(aff_model(batch).squeeze().mul(cls_out), batch['affs'])
         cls_loss.backward()
         cls_optimizer.step()
