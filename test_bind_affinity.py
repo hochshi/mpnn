@@ -128,8 +128,9 @@ for graph in data:
     graph.label = np.float32(target == graph.label)
 
 scaler = preprocessing.MinMaxScaler()
-trans_aff = scaler.fit_transform(affinities)
-for graph, aff in zip(data, trans_aff):
+trans_aff = scaler.fit_transform(np.array(affinities).reshape(-1, 1))
+_NEG_CUTOFF = scaler.transform(5)
+for graph, aff in zip(data, trans_aff.reshape(-1)):
     graph.aff = np.float32(aff)
 graph_encoder = GraphEncoder()
     # with open('basic_model_graph_encoder.pickle', 'wb') as out:
