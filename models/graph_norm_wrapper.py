@@ -9,4 +9,4 @@ class GraphWrapper(nn.Module):
         self.add_module('graph_model', graph_model)
 
     def forward(self, graph_batch):
-        return self.graph_model(graph_batch['afm'], graph_batch['bfm'], graph_batch['a_bfm'], graph_batch['adj'], graph_batch['mask'])
+        return self.graph_model(graph_batch['afm'], graph_batch['bfm'], graph_batch['adj'], graph_batch['mask'])

@@ -76,7 +76,6 @@ def collate_2d_graphs(graphs):
     max_dims = graphs[max_size].afm.shape
     afms = np.array([embed_arr(graph.afm, max_dims) for graph in graphs])
     bfms = np.array([embed_arr(graph.bfm, graphs[max_size].bfm.shape) for graph in graphs])
-    a_bfms = np.array([embed_arr(graph.a_bfm, graphs[max_size].a_bfm.shape) for graph in graphs])
     adjs = np.array([embed_arr(graph.adj, graphs[max_size].adj.shape) for graph in graphs])
     # t_dists = np.array([embed_arr(graph.t_dist, graphs[max_size].t_dist.shape) for graph in graphs])
     afm_masks = np.array([create_mask(graph.afm.shape[:-1]+(1,), max_dims[:-1] + (1,)) for graph in graphs])
@@ -84,8 +83,7 @@ def collate_2d_graphs(graphs):
 
     return {
         'afm': Variable(from_numpy(afms)),
-        'bfm': Variable(from_numpy(bfms).long()),
-        'a_bfm': Variable(from_numpy(a_bfms).long()),
+        'bfm': Variable(from_numpy(bfms)),
         'adj': Variable(from_numpy(adjs)),
         'mask': Variable(from_numpy(afm_masks)),
         'labels': Variable(from_numpy(labels))

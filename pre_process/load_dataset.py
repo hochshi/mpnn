@@ -49,8 +49,8 @@ def encode_molgraphs(m2gs):
         graph_encoder.atom_enc = atom_enc
     if graph_encoder.bond_enc is None:
         graph_encoder.bond_enc = build_bond_enc(m2gs)
-    if graph_encoder.a_bond_enc is None:
-        graph_encoder.a_bond_enc = build_a_bond_enc(m2gs)
+    # if graph_encoder.a_bond_enc is None:
+    #     graph_encoder.a_bond_enc = build_a_bond_enc(m2gs)
 
     for m2g in m2gs:
         m2g.graph.encode(graph_encoder)
@@ -70,12 +70,20 @@ def build_atom_enc(m2gs):
 
 def build_bond_enc(m2gs):
     # bond_features = m2gs[0].graph.bfm.shape[-1]
-    all_bfms = np.concatenate([m2g.graph.bfm.reshape(-1) for m2g in m2gs])
+    # all_bfms = np.concatenate([m2g.graph.bfm.reshape(-1) for m2g in m2gs])
     # mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
-    le = LabelEncoder()
-    le.fit(all_bfms)
-    return [le]
-
+    # le = LabelEncoder()
+    # le.fit(all_bfms)
+    # return [le]
+    bond_encs = []
+    all_bfms = np.vstack([m2g.graph.bfm.reshape(-1, len(BondFeatures.DEFAULT_FEATURES)) for m2g in m2gs])
+    mask = 1 == np.vstack([m2g.graph.adj.reshape(-1, 1) for m2g in m2gs]).reshape(-1)
+    for i in BondFeatures.HOT_FEATURES:
+        bond_enc = LabelBinarizer()
+        bond_enc.fit(all_bfms[mask, i])
+        bond_encs.append((i, bond_enc))
+    bond_encs.append((BondFeatures.BOOL_FEATURES, None))
+    return bond_encs
 
 def build_a_bond_enc(m2gs):
     # bond_features = m2gs[0].graph.bfm.shape[-1]

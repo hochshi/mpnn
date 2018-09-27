@@ -2,14 +2,13 @@ import torch
 from torch import nn
 from mpnn_functions import *
 from mpnn_functions.message.ggnn_msg_pass import GGNNMsgPass
-from mask_batch_norm import MaskBatchNorm1d
 
 _DEF_STEPS = 5
 
 
 class BasicModel(nn.Module):
 
-    def __init__(self, node_features, edge_features, a_edge_features, message_features, adjacency_dim, output_dim,
+    def __init__(self, node_features, edge_features, message_features, adjacency_dim, output_dim,
                  message_func=GGNNMsgPass, message_opts={},
                  message_agg_func=AdjMsgAgg, agg_opts={},
                  update_func=GRUUpdate, update_opts={}, message_steps=_DEF_STEPS,
@@ -18,7 +17,6 @@ class BasicModel(nn.Module):
 
         message_opts['node_features'] = node_features
         message_opts['edge_features'] = edge_features
-        message_opts['a_edge_features'] = a_edge_features
         message_opts['message_features'] = message_features
 
         agg_opts['adj_dim'] = adjacency_dim
@@ -26,7 +24,7 @@ class BasicModel(nn.Module):
         update_opts['node_features'] = node_features
         update_opts['message_features'] = message_features
 
-        readout_opts['node_features'] = 3*node_features
+        readout_opts['node_features'] = (1+_DEF_STEPS)*node_features
         readout_opts['output_dim'] = output_dim
 
         self.nf = node_features
@@ -65,7 +63,7 @@ class BasicModel(nn.Module):
         # self.ae = atom_encoder
         # self.be = bond_encoder
 
-    def forward(self, afm, bfm, a_bfm, adj, mask):
+    def forward(self, afm, bfm, adj, mask):
         # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> object
 
         """
@@ -83,16 +81,16 @@ class BasicModel(nn.Module):
         """
         # afm = self.aebn(self.ae(afm), mask)
         # bfm = self.bebn(self.be(bfm), adj)
-        self.mf.edge_embed = self.mf._precompute_edge_embed(bfm, self.mf.adj_w)
-        self.mf.edge_att = self.mf._precompute_att_embed(a_bfm, self.mf.adj_a)
+        self.mf.edge_embed = self.mf._precompute_edge_embed(bfm)
+        # self.mf.edge_att = self.mf._precompute_att_embed(a_bfm, self.mf.adj_a)
         # node_state = afm
         batch, nodes, _ = afm.shape
-        node_states = []
-        node_states.append(self.mf.edge_att.view(batch, nodes, self.nf))
+        node_states = [self.mf._precompute_node_embed(afm)]
+        # node_states.append(self.mf.edge_att.view(batch, nodes, self.nf))
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         for i in range(self.iters):
-            node_states.append(self.uf(self.mf(node_states[-1], bfm, a_bfm, True), node_states[-1], mask))
+            node_states.append(self.uf(self.mf(node_states[-1], bfm, True), node_states[-1], mask))
         return self.of(torch.cat(node_states, dim=-1), mask=mask)
 
     @staticmethod

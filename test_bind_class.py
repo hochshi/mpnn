@@ -88,38 +88,28 @@ torch.manual_seed(seed)
 data_file = sys.argv[1]
 
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
-# try:
-#     pass
-    # file_data = np.load(data_file+'.npz')
-    # data = file_data['data']
-    # no_labels = file_data['no_labels']
-    # all_labels = file_data['all_labels']
-    # file_data.close()
-# except IOError:
+
 data, no_labels, all_labels = load_classification_dataset(data_file+'.csv', 'InChI', Chem.MolFromInchi, mgf, 'target')
 for graph in data:
     graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
     graph.afm = graph.afm.astype(np.float32)
-    graph.bfm = graph.bfm.astype(np.long)
-    graph.a_bfm = graph.a_bfm.astype(np.long)
+    graph.bfm = graph.bfm.astype(np.float32)
     graph.adj = graph.adj.astype(np.float32)
     graph.label = long(graph.label)
 graph_encoder = GraphEncoder()
-    # with open('basic_model_graph_encoder.pickle', 'wb') as out:
-    #     pickle.dump(graph_encoder, out)
-    # np.savez_compressed(data_file, data=data, no_labels=no_labels, all_labels=all_labels)
 
 
-# ae = AutoEncoder(data[0].afm.shape[-1])
-# be = AutoEncoder(data[0].bfm.shape[-1])
+model_attributes = {
+    'afm': data[0].afm.shape[-1],
+    'bfm': data[0].bfm.shape[-1],
+    'mfm': data[0].afm.shape[-1],
+    'adj': data[0].adj.shape[-1],
+    'out': data[0].afm.shape[-1]*(_DEF_STEPS+1),
+    'classification_output': no_labels
+}
 
-den = int(2*data[0].afm.shape[-1])
+den = model_attributes['out']
 dense_layer = []
-# while den > 10:
-#     new_den = int(np.ceil(den/2))
-#     dense_layer.append(nn.Linear(den, new_den))
-#     dense_layer.append(nn.ReLU())
-#     den = new_den
 for i in range(50):
     new_den = 2 * den
     if new_den > no_labels:
@@ -129,23 +119,15 @@ for i in range(50):
     den = new_den
 dense_layer.append(nn.Linear(den, no_labels))
 
-model_attributes = {
-    'afm': 8,
-    'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
-    'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': 8,
-    'adj': data[0].adj.shape[-1],
-    'out': 8*(_DEF_STEPS+1),
-    'classification_output': no_labels
-}
+dense_layer = [nn.Linear(model_attributes['out'], model_attributes['out']), nn.ReLU()] * (50 - len(dense_layer)) + dense_layer
 
 
 model = nn.Sequential(
-    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'],model_attributes['a_bfm'], model_attributes['mfm'],
+    GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['mfm'],
                             model_attributes['adj'], model_attributes['out'])),
     nn.BatchNorm1d(model_attributes['out']),
-    nn.Linear(model_attributes['out'], model_attributes['classification_output'])
-    # nn.Sequential(*dense_layer)
+    # nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    nn.Sequential(*dense_layer)
 )
 
 model.float()
