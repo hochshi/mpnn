@@ -6,7 +6,7 @@ from pre_process.utils import from_numpy
 import numpy as np
 from torch.autograd import Variable
 
-_DEF_STEPS = 5
+_DEF_STEPS = 2
 
 
 class BasicModel(nn.Module):
@@ -38,6 +38,8 @@ class BasicModel(nn.Module):
         self.mf = message_features
 
         self.register_parameter('adj_a', nn.Parameter(torch.Tensor(self.aef, self.mf)))
+        self.register_parameter('a_zeros', nn.Parameter(torch.zeros(1, self.mf).float(), requires_grad=False))
+
         self.mfs = []
         for i in range(self.iters):
             self.mfs.append(message_func(**message_opts))
@@ -67,7 +69,7 @@ class BasicModel(nn.Module):
         batch, nodes, _ = afm.shape
         eye = self.create_eye(nodes, batch)
         l_adjs = [Variable(eye)]
-        node_states = [self.mfs[0]._precompute_att_embed(a_bfm, self.adj_a)]
+        node_states = [self.mfs[0]._precompute_att_embed(a_bfm, self.adj_a, self.a_zeros)]
         # for mf, bn, ma_bn, uf in zip(self.mfs, self.bns, self.ma_bns, self.ufs):
         #     node_state = bn(uf(ma_bn(self.ma(mf(afm, bfm), adj), mask), node_state, mask), mask)
         # for i in range(self.iters):

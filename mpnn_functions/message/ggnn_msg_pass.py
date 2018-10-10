@@ -11,9 +11,9 @@ class GGNNMsgPass(nn.Module):
         self.edge_embed = None
         self.edge_att = None
         self.register_parameter('adj_w', nn.Parameter(torch.Tensor(self.ef, self.mf, self.nf)))
-        self.register_parameter('adj_a', nn.Parameter(torch.Tensor(self.aef, self.mf)))
+        self.register_parameter('adj_a', nn.Parameter(torch.Tensor(self.aef, self.nf)))
         self.register_parameter('zeros', nn.Parameter(torch.zeros(1, self.mf, self.nf).float(), requires_grad=False))
-        self.register_parameter('a_zeros', nn.Parameter(torch.zeros(1, self.mf).float(), requires_grad=False))
+        self.register_parameter('a_zeros', nn.Parameter(torch.zeros(1, self.nf).float(), requires_grad=False))
 
         self.init_weights()
 
@@ -28,17 +28,17 @@ class GGNNMsgPass(nn.Module):
         bfm = bfm.view(batch_size, n_nodes, n_nodes, self.mf, self.nf)
         return bfm
 
-    def _precompute_att_embed(self, bfm, weights):
+    def _precompute_att_embed(self, bfm, weights, zeros):
         batch_size, n_nodes = bfm.shape
-        weights = torch.cat([self.a_zeros, weights])
+        weights = torch.cat([zeros, weights])
         bfm = torch.index_select(weights, dim=0, index=bfm.view(-1))
-        bfm = bfm.view(-1, n_nodes, self.mf)
+        bfm = bfm.view(-1, n_nodes, weights.shape[-1])
         return bfm
 
     def forward(self, afm, bfm, a_bfm, adj, reuse_graph_tensors=False):
         if not reuse_graph_tensors:
             self.edge_embed = self._precompute_edge_embed(bfm, self.adj_w)
-            self.edge_att = self._precompute_att_embed(a_bfm, self.adj_a)
+            self.edge_att = self._precompute_att_embed(a_bfm, self.adj_a, self.a_zeros)
 
         messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze().sum(dim=1)
         messages = adj.matmul(messages)

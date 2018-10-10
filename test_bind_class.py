@@ -129,13 +129,18 @@ for i in range(50):
     den = new_den
 dense_layer.append(nn.Linear(den, no_labels))
 
+bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
+a_bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
+afm = int(np.ceil(a_bfm ** 0.25))
+mfm = int(afm * np.ceil(bfm ** 0.25))
+
 model_attributes = {
-    'afm': 8,
-    'bfm': sum(None != graph_encoder.bond_enc[0].classes_),
-    'a_bfm': sum(None != graph_encoder.a_bond_enc[0].classes_),
-    'mfm': 8,
-    'adj': data[0].adj.shape[-1],
-    'out': 8*(_DEF_STEPS+1),
+    'afm': afm,
+    'bfm': bfm,
+    'a_bfm': a_bfm,
+    'mfm': mfm,
+    'adj': 1,
+    'out': mfm*(_DEF_STEPS+1),
     'classification_output': no_labels
 }
 
