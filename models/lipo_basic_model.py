@@ -6,7 +6,7 @@ from pre_process.utils import from_numpy
 import numpy as np
 from torch.autograd import Variable
 
-_DEF_STEPS = 2
+_DEF_STEPS = 3
 
 
 class BasicModel(nn.Module):
@@ -78,7 +78,7 @@ class BasicModel(nn.Module):
             node_states.append(mf(node_states[0], bfm, a_bfm, l_adjs[-1], False))
             l_adjs.append(self.create_adj(l_adjs, adj, eye, nodes))
 
-        node_states = torch.cat([aa.unsqueeze(0) for aa in node_states]).view(_DEF_STEPS + 1, -1, self.mf)
+        node_states = torch.cat([aa.unsqueeze(0) for aa in reversed(node_states)]).view(_DEF_STEPS + 1, -1, self.mf)
         node_states = self.uf(node_states)
         node_states = node_states[1].mul(mask.view(-1, 1)).view(batch, nodes, self.out_dim)
         return self.of(node_states, mask=mask)
