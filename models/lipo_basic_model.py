@@ -78,10 +78,27 @@ class BasicModel(nn.Module):
             node_states.append(mf(node_states[0], bfm, a_bfm, l_adjs[-1], False))
             l_adjs.append(self.create_adj(l_adjs, adj, eye, nodes))
 
-        node_states = torch.cat([aa.unsqueeze(0) for aa in node_states]).view(_DEF_STEPS + 1, -1, self.mf)
-        node_states = self.uf(node_states)
-        node_states = node_states[1].mul(mask.view(-1, 1)).view(batch, nodes, self.out_dim)
-        return self.of(node_states, mask=mask)
+        messages = []
+        # Copy 0 level message to proper node
+        messages.append(node_states[0].unsqueeze(2).mul(l_adjs[2].unsqueeze(-1)))
+
+        # Copy 1st level messages to proper node
+        messages.append(adj.unsqueeze(1).matmul(node_states[1]).mul(l_adjs[2].unsqueeze(-1)))
+
+        # Copy 2nd level messages to proper node
+        messages.append(l_adjs[1].matmul(node_states[2].view(batch, nodes, -1)).view(batch, nodes, nodes, -1).mul(l_adjs[2].unsqueeze(-1)))
+
+        messages = torch.cat([aa.unsqueeze(0) for aa in messages]).view(_DEF_STEPS + 1, -1, self.mf)
+        messages = self.uf(messages)[1].squeeze().mul(l_adjs[-1].view(-1, 1)).view(batch, nodes, nodes, self.out_dim)
+        # TODO: I should do something a little bit more clever than just sum
+        messages = messages.sum(dim=2)
+
+        return self.of(messages, mask=mask)
+
+        # node_states = torch.cat([aa.unsqueeze(0) for aa in node_states]).view(_DEF_STEPS + 1, -1, self.mf)
+        # node_states = self.uf(node_states)
+        # node_states = node_states[1].mul(mask.view(-1, 1)).view(batch, nodes, self.out_dim)
+        # return self.of(node_states, mask=mask)
         # return self.of(torch.cat(node_states, dim=-1), mask=mask)
 
     def init_self_weights(self):

@@ -40,6 +40,7 @@ class GGNNMsgPass(nn.Module):
             self.edge_embed = self._precompute_edge_embed(bfm, self.adj_w)
             self.edge_att = self._precompute_att_embed(a_bfm, self.adj_a, self.a_zeros)
 
-        messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze().sum(dim=1)
-        messages = adj.matmul(messages)
+        # messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze().sum(dim=1)
+        messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze()
+        # messages = adj.matmul(messages)
         return messages
