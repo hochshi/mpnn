@@ -45,7 +45,8 @@ class BasicModel(nn.Module):
             self.mfs.append(message_func(**message_opts))
             self.add_module('mf' + str(i), self.mfs[-1])
 
-        self.uf = nn.GRU(self.mf, self.out_dim)
+        # self.uf = nn.GRU(self.mf, self.out_dim)
+        self.uf = nn.GRU(self.mf, self.mf)
         self.of = readout_func(**readout_opts)
 
         self.init_self_weights()
@@ -80,6 +81,12 @@ class BasicModel(nn.Module):
 
         node_states = torch.cat([aa.unsqueeze(0) for aa in reversed(node_states)]).view(_DEF_STEPS + 1, -1, self.mf)
         node_states = self.uf(node_states)
+        # using the output of the GRU was really helpfull - trying to use all the outputs instead of just the last
+        # hidden state
+        node_states = torch.unbind(node_states[0].view(_DEF_STEPS + 1, batch, nodes, self.mf))
+        node_states = torch.cat(node_states, dim=-1).mul(mask)
+        return self.of(node_states, mask=mask)
+
         node_states = node_states[1].mul(mask.view(-1, 1)).view(batch, nodes, self.out_dim)
         return self.of(node_states, mask=mask)
         # return self.of(torch.cat(node_states, dim=-1), mask=mask)
