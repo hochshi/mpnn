@@ -10,6 +10,7 @@ class GGNNMsgPass(nn.Module):
         self.mf = message_features
         self.edge_embed = None
         self.edge_att = None
+        self.messages = None
         self.register_parameter('adj_w', nn.Parameter(torch.Tensor(self.ef, self.mf, self.nf)))
         self.register_parameter('adj_a', nn.Parameter(torch.Tensor(self.aef, self.nf)))
         self.register_parameter('zeros', nn.Parameter(torch.zeros(1, self.mf, self.nf).float(), requires_grad=False))
@@ -39,7 +40,6 @@ class GGNNMsgPass(nn.Module):
         if not reuse_graph_tensors:
             self.edge_embed = self._precompute_edge_embed(bfm, self.adj_w)
             self.edge_att = self._precompute_att_embed(a_bfm, self.adj_a, self.a_zeros)
+            self.messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze().sum(dim=1)
 
-        messages = self.edge_embed.matmul(self.edge_att.unsqueeze(1).unsqueeze(-1)).squeeze().sum(dim=1)
-        messages = adj.matmul(messages)
-        return messages
+        return adj.matmul(self.messages)

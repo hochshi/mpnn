@@ -192,7 +192,7 @@ for epoch in tqdm.trange(1000):
     epoch_losses.append(epoch_loss)
     t_mse = test_model(model, train)
     mse = test_model(model, val)
-    acc = test_model_class(model, val)
+    # acc = test_model_class(model, val)
     tqdm.tqdm.write(
         "epoch {} loss: {} Train MSE: {} Val MSE: {} Val ACC: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse, acc))
     if mse < 1.55:

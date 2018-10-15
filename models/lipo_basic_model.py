@@ -6,7 +6,7 @@ from pre_process.utils import from_numpy
 import numpy as np
 from torch.autograd import Variable
 
-_DEF_STEPS = 3
+_DEF_STEPS = 4
 
 
 class BasicModel(nn.Module):
