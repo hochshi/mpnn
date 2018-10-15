@@ -129,10 +129,10 @@ for i in range(50):
     den = new_den
 dense_layer.append(nn.Linear(den, no_labels))
 
-bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
+bfm = int(sum(None != graph_encoder.bond_enc[0].classes_))
 a_bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
 afm = int(np.ceil(a_bfm ** 0.5))
-mfm = int(afm * np.ceil(bfm ** 0.5))
+mfm = 5*int(np.ceil(a_bfm **0.5) * np.ceil(bfm ** 0.5))
 
 model_attributes = {
     'afm': afm,
@@ -140,7 +140,7 @@ model_attributes = {
     'a_bfm': a_bfm,
     'mfm': mfm,
     'adj': 1,
-    'out': mfm*(_DEF_STEPS+1),
+    'out': mfm*2,
     'classification_output': no_labels
 }
 
@@ -173,9 +173,9 @@ train, val = train_test_split(train, test_size=0.1, random_state=seed, stratify=
 train = GraphDataSet(train)
 val = GraphDataSet(val)
 test = GraphDataSet(test)
-train = DataLoader(train, 8, shuffle=True, collate_fn=collate_2d_graphs)
-val = DataLoader(val, 8, shuffle=True, collate_fn=collate_2d_graphs)
-test = DataLoader(test, 8, shuffle=True, collate_fn=collate_2d_graphs)
+train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
+val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
+test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
 
 
 epoch_losses = []
