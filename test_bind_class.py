@@ -194,7 +194,7 @@ for epoch in tqdm.trange(1000):
     mse = test_model(model, val)
     # acc = test_model_class(model, val)
     tqdm.tqdm.write(
-        "epoch {} loss: {} Train MSE: {} Val MSE: {} Val ACC: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse, acc))
+        "epoch {} loss: {} Train MSE: {} Val MSE: {} Val ACC: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse))
     if mse < 1.55:
         break
     # if not np.isnan(f1) and f1 > 0.8:
