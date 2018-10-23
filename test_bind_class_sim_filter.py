@@ -70,8 +70,8 @@ def test_model(model, dataset):
             tot_loss += loss.item() * batch['afm'].shape[0]
             labels.extend(output.max(dim=-1)[1].cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
-    pre = metrics.precision_score(train_labels, labels, average='weighted')
-    rec = metrics.recall_score(train_labels, labels, average='weighted')
+    pre = metrics.precision_score(true_labels, labels, average='weighted')
+    rec = metrics.recall_score(true_labels, labels, average='weighted')
     f1 = 2*pre*rec/(pre + rec + 1e-8)
     return tot_loss/len(dataset.dataset), (pre, rec, f1)
 
