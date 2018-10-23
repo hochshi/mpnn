@@ -87,7 +87,7 @@ def test_model_class(model, dataset):
 
 
 try:
-    seed = sys.argv[2]
+    seed = int(sys.argv[2])
 except KeyError:
     seed = 317
 
