@@ -70,7 +70,10 @@ def test_model(model, dataset):
             tot_loss += loss.item() * batch['afm'].shape[0]
             labels.extend(output.max(dim=-1)[1].cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
-    return tot_loss/len(dataset.dataset), metrics.accuracy_score(true_labels, labels)
+    pre = metrics.precision_score(train_labels, labels, average='weighted')
+    rec = metrics.recall_score(train_labels, labels, average='weighted')
+    f1 = 2*pre*rec/(pre + rec + 1e-8)
+    return tot_loss/len(dataset.dataset), (pre, rec, f1)
 
 def test_model_class(model, dataset):
     model.eval()
@@ -83,7 +86,11 @@ def test_model_class(model, dataset):
     return metrics.accuracy_score(true_labels, labels)
 
 
-seed = 317
+try:
+    seed = sys.argv[2]
+except KeyError:
+    seed = 317
+
 torch.manual_seed(seed)
 data_file = sys.argv[1]
 
@@ -182,7 +189,7 @@ test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
 
 epoch_losses = []
 break_con = False
-best_val_loss = np.inf
+best_val_f1 = 0
 for epoch in tqdm.trange(1000):
     model.train()
     epoch_loss = 0
@@ -198,8 +205,8 @@ for epoch in tqdm.trange(1000):
     # acc = test_model_class(model, val)
     tqdm.tqdm.write(
         "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss/len(train.dataset), t_mse, mse))
-    if mse[0] < best_val_loss:
-        best_val_loss = mse[0]
+    if mse[1][2] > best_val_f1:
+        best_val_f1 = mse[1][2]
         save_model(model, 'filter_model_best_loss', model_attributes, {})
 
 model.load_state_dict(torch.load('filter_model_best_loss.state_dict', map_location=lambda storage, loc: storage))
