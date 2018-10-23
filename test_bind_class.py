@@ -132,7 +132,8 @@ dense_layer.append(nn.Linear(den, no_labels))
 bfm = int(sum(None != graph_encoder.bond_enc[0].classes_))
 a_bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
 afm = int(np.ceil(a_bfm ** 0.5))
-mfm = 5*int(np.ceil(a_bfm **0.5) * np.ceil(bfm ** 0.5))
+# mfm = 5*int(np.ceil(a_bfm **0.5) * np.ceil(bfm ** 0.5))
+mfm = int(np.ceil(no_labels/2))
 
 model_attributes = {
     'afm': afm,
@@ -163,7 +164,7 @@ if torch.cuda.is_available():
     model.cuda()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 model.train()
 
 train, test, train_labels, _ = train_test_split(data, all_labels, test_size=0.1, random_state=seed, stratify=all_labels)
