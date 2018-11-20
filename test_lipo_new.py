@@ -148,6 +148,18 @@ model_attributes = {
     'classification_output': 1
 }
 
+model = nn.Sequential(
+        GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['a_bfm'],
+                                model_attributes['mfm'],
+                                model_attributes['adj'], model_attributes['out'])),
+        nn.BatchNorm1d(model_attributes['out']),
+        nn.Linear(model_attributes['out'], model_attributes['classification_output'])
+    )
+
+print "Model has: {} parameters".format(count_model_params(model))
+print model
+print model_attributes
+
 kf = KFold(n_splits=10, shuffle=True, random_state=seed)
 for train, test in tqdm.tqdm(kf.split(data)):
     train, val = train_test_split(train, test_size=0.1, random_state=seed)
@@ -169,9 +181,6 @@ for train, test in tqdm.tqdm(kf.split(data)):
     model.float()
     model.apply(BasicModel.init_weights)
 
-    print "Model has: {} parameters".format(count_model_params(model))
-    print model
-    print model_attributes
     if torch.cuda.is_available():
         model.cuda()
 
