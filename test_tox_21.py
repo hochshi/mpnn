@@ -66,10 +66,10 @@ def test_model(model, dataset):
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
             output = model(batch).squeeze()
-            loss = criterion(output, batch['labels'])
+            loss = criterion(output, batch['labels'].squeeze())
             tot_loss += loss.item() * batch['afm'].shape[0]
-            labels.extend(output.max(dim=-1)[1].cpu().data.numpy().tolist())
-            true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
+            labels.extend(output.cpu().data.numpy().reshape(-1).tolist())
+            true_labels.extend(batch['labels'].cpu().data.numpy().reshape(-1).tolist())
     return tot_loss/len(dataset.dataset), metrics.roc_auc_score(true_labels, labels)
 
 def test_model_class(model, dataset):
@@ -190,7 +190,7 @@ for train, test in tqdm.tqdm(kf.split(data)):
         model.cuda()
 
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.0001)
     model.train()
 
     run_res.append(train_model(model, train, val, test, optimizer, criterion))
