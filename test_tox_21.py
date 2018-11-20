@@ -114,6 +114,7 @@ def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
 seed = 317
 torch.manual_seed(seed)
 data_file = sys.argv[1]
+target_col = sys.argv[2]
 
 mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
 # try:
@@ -124,7 +125,7 @@ mgf = MolGraphFactory(Mol2DGraph.TYPE, AtomFeatures(), BondFeatures())
     # all_labels = file_data['all_labels']
     # file_data.close()
 # except IOError:
-data, no_labels, all_labels = load_classification_dataset(data_file, 'smiles', Chem.MolFromSmiles, mgf, 'HIV_active')
+data, no_labels, all_labels = load_classification_dataset(data_file, 'smiles', Chem.MolFromSmiles, mgf, target_col)
 data = np.array(data)
 for graph in data:
     graph.mask = np.ones(graph.afm.shape[0], dtype=np.float32).reshape(graph.afm.shape[0], 1)
