@@ -132,7 +132,7 @@ for graph in data:
     graph.bfm = graph.bfm.astype(np.long)
     graph.a_bfm = graph.a_bfm.astype(np.long)
     graph.adj = graph.adj.astype(np.float32)
-    graph.label = np.long(graph.label)
+    graph.label = np.float32(graph.label)
 graph_encoder = GraphEncoder()
 
 
@@ -148,7 +148,7 @@ model_attributes = {
     'mfm': mfm,
     'adj': 1,
     'out': mfm*2,
-    'classification_output': 2
+    'classification_output': 1
 }
 
 model = nn.Sequential(
@@ -170,9 +170,9 @@ for train, test in tqdm.tqdm(kf.split(data)):
     train = GraphDataSet(data[train])
     val = GraphDataSet(data[val])
     test = GraphDataSet(data[test])
-    train = DataLoader(train, 128, shuffle=True, collate_fn=collate_2d_graphs)
-    val = DataLoader(val, 128, shuffle=True, collate_fn=collate_2d_graphs)
-    test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
+    train = DataLoader(train, 16, shuffle=True, collate_fn=collate_2d_graphs)
+    val = DataLoader(val, 16, shuffle=True, collate_fn=collate_2d_graphs)
+    test = DataLoader(test, 16, shuffle=True, collate_fn=collate_2d_graphs)
 
     model = nn.Sequential(
         GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['a_bfm'],
@@ -188,7 +188,7 @@ for train, test in tqdm.tqdm(kf.split(data)):
     if torch.cuda.is_available():
         model.cuda()
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
     model.train()
 
