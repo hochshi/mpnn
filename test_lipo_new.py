@@ -65,7 +65,7 @@ def test_model(model, dataset):
     tot_loss = 0
     with torch.no_grad():
         for batch in tqdm.tqdm(dataset):
-            output = model(batch)
+            output = model(batch).squeeze()
             loss = criterion(output, batch['labels'])
             tot_loss += loss.item() * batch['afm'].shape[0]
             labels.extend(output.cpu().data.numpy().tolist())
@@ -91,7 +91,7 @@ def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
         epoch_loss = 0
         for batch in tqdm.tqdm(ttrain):
             tmodel.zero_grad()
-            loss = tcriterion(tmodel(batch), batch['labels'])
+            loss = tcriterion(tmodel(batch).squeeze(), batch['labels'])
             epoch_loss += loss.item() * batch['afm'].shape[0]
             loss.backward()
             toptimizer.step()
@@ -100,13 +100,14 @@ def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
         mse = test_model(tmodel, tval)
         tqdm.tqdm.write(
             "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss / len(ttrain.dataset), t_mse, mse))
-        # if mse < 1.55:
-        #     break
+        if mse[1] < 0.65:
+            break
 
-    mse = test_model(tmodel, tval)
+    vmse = test_model(tmodel, tval)
     tqdm.tqdm.write("Val MSE: {}".format(mse))
-    mse = test_model(tmodel, ttest)
+    tmse = test_model(tmodel, ttest)
     tqdm.tqdm.write("Testing MSE: {}".format(mse))
+    return [vmse, tmse]
 
 seed = 317
 torch.manual_seed(seed)
@@ -136,7 +137,7 @@ graph_encoder = GraphEncoder()
 bfm = int(sum(None != graph_encoder.bond_enc[0].classes_))
 a_bfm = int(sum(None != graph_encoder.a_bond_enc[0].classes_))
 afm = int(np.ceil(a_bfm ** 0.25))
-mfm = int(np.ceil(a_bfm ** 0.25) * np.ceil(bfm ** 0.25))
+mfm = int(np.ceil(a_bfm ** 0.25) * np.ceil(bfm ** 0.5))
 
 model_attributes = {
     'afm': afm,
@@ -160,15 +161,16 @@ print "Model has: {} parameters".format(count_model_params(model))
 print model
 print model_attributes
 
+run_res = []
 kf = KFold(n_splits=10, shuffle=True, random_state=seed)
 for train, test in tqdm.tqdm(kf.split(data)):
     train, val = train_test_split(train, test_size=0.1, random_state=seed)
     train = GraphDataSet(data[train])
     val = GraphDataSet(data[val])
     test = GraphDataSet(data[test])
-    train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
-    val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
-    test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
+    train = DataLoader(train, 128, shuffle=True, collate_fn=collate_2d_graphs)
+    val = DataLoader(val, 128, shuffle=True, collate_fn=collate_2d_graphs)
+    test = DataLoader(test, 128, shuffle=True, collate_fn=collate_2d_graphs)
 
     model = nn.Sequential(
         GraphWrapper(BasicModel(model_attributes['afm'], model_attributes['bfm'], model_attributes['a_bfm'],
@@ -185,10 +187,10 @@ for train, test in tqdm.tqdm(kf.split(data)):
         model.cuda()
 
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
     model.train()
 
-    train_model(model, train, val, test, optimizer, criterion)
+    run_res.append(train_model(model, train, val, test, optimizer, criterion))
 
 
 
