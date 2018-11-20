@@ -129,7 +129,7 @@ for graph in data:
     graph.bfm = graph.bfm.astype(np.long)
     graph.a_bfm = graph.a_bfm.astype(np.long)
     graph.adj = graph.adj.astype(np.float32)
-    graph.label = float(graph.label)
+    graph.label = np.float32(graph.label)
 graph_encoder = GraphEncoder()
 
 
