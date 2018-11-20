@@ -68,7 +68,7 @@ def test_model(model, dataset):
             output = model(batch).squeeze()
             loss = criterion(output, batch['labels'])
             tot_loss += loss.item() * batch['afm'].shape[0]
-            labels.extend(output.cpu().data.numpy().tolist())
+            labels.extend(output.max(dim=-1)[1].cpu().data.numpy().tolist())
             true_labels.extend(batch['labels'].cpu().data.numpy().tolist())
     return tot_loss/len(dataset.dataset), metrics.roc_auc_score(true_labels, labels)
 
