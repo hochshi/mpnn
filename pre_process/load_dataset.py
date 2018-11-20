@@ -13,6 +13,8 @@ def generate_molgraphs(mol_strs, labels, text2molfunc, mol_graph_factory):
     # type: (np.array, np.array, function, MolGraphFactory) -> List[MolGraph]
     m2gs = []
     for mol_str, label in zip(mol_strs, labels):
+        if np.isnan(label):
+            continue
         mol = text2molfunc(mol_str)
         if mol is None:
             continue
