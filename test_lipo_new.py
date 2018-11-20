@@ -86,7 +86,8 @@ def test_model_class(model, dataset):
 def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
     epoch_losses = []
     break_con = False
-    for epoch in tqdm.trange(1000):
+    itr = tqdm.trange(1000)
+    for epoch in itr:
         tmodel.train()
         epoch_loss = 0
         for batch in tqdm.tqdm(ttrain):
@@ -101,6 +102,7 @@ def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
         tqdm.tqdm.write(
             "epoch {} loss: {} Train MSE: {} Val MSE: {}".format(epoch, epoch_loss / len(ttrain.dataset), t_mse, mse))
         if mse[1] < 0.65:
+            itr.close()
             break
 
     vmse = test_model(tmodel, tval)
