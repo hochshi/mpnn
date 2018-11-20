@@ -151,9 +151,9 @@ model_attributes = {
 kf = KFold(n_splits=10, shuffle=True, random_state=seed)
 for train, test in tqdm.tqdm(kf.split(data)):
     train, val = train_test_split(train, test_size=0.1, random_state=seed)
-    train = GraphDataSet(train)
-    val = GraphDataSet(val)
-    test = GraphDataSet(test)
+    train = GraphDataSet(data[train])
+    val = GraphDataSet(data[val])
+    test = GraphDataSet(data[test])
     train = DataLoader(train, 32, shuffle=True, collate_fn=collate_2d_graphs)
     val = DataLoader(val, 32, shuffle=True, collate_fn=collate_2d_graphs)
     test = DataLoader(test, 32, shuffle=True, collate_fn=collate_2d_graphs)
