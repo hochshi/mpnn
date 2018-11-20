@@ -106,9 +106,9 @@ def train_model(tmodel, ttrain, tval, ttest, toptimizer, tcriterion):
             break
 
     vmse = test_model(tmodel, tval)
-    tqdm.tqdm.write("Val MSE: {}".format(mse))
+    tqdm.tqdm.write("Val MSE: {}".format(vmse))
     tmse = test_model(tmodel, ttest)
-    tqdm.tqdm.write("Testing MSE: {}".format(mse))
+    tqdm.tqdm.write("Testing MSE: {}".format(tmse))
     return [vmse, tmse]
 
 seed = 317
